@@ -1,0 +1,176 @@
+{
+  "info": {
+    "name": "Antique API",
+    "description": "API for antique scanning and identification",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the API is running"
+      }
+    },
+    {
+      "name": "Scan Antique",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-user-id",
+            "value": "{{user_id}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "image",
+              "type": "file",
+              "src": []
+            },
+            {
+              "key": "additionalInfo",
+              "value": "Found this in my grandmother's attic",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/scan/antique",
+          "host": ["{{base_url}}"],
+          "path": ["api", "scan", "antique"]
+        },
+        "description": "Upload an image of an antique for identification and valuation"
+      }
+    },
+    {
+      "name": "Get History",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-user-id",
+            "value": "{{user_id}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/scan/history?limit=20&offset=0",
+          "host": ["{{base_url}}"],
+          "path": ["api", "scan", "history"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "20"
+            },
+            {
+              "key": "offset",
+              "value": "0"
+            }
+          ]
+        },
+        "description": "Get scan history for the user"
+      }
+    },
+    {
+      "name": "Get Submission Details",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-user-id",
+            "value": "{{user_id}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/scan/:scanId",
+          "host": ["{{base_url}}"],
+          "path": ["api", "scan", ":scanId"],
+          "variable": [
+            {
+              "key": "scanId",
+              "value": "1",
+              "description": "ID of the scan to retrieve"
+            }
+          ]
+        },
+        "description": "Get detailed information about a specific scan"
+      }
+    },
+    {
+      "name": "Get Antiques List",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-user-id",
+            "value": "{{user_id}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/antiques/list?limit=50",
+          "host": ["{{base_url}}"],
+          "path": ["api", "antiques", "list"],
+          "query": [
+            {
+              "key": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "description": "Get list of all antiques scanned"
+      }
+    },
+    {
+      "name": "Antique Chat",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-user-id",
+            "value": "{{user_id}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Tell me more about this antique\",\n  \"scanId\": \"1\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/chat",
+          "host": ["{{base_url}}"],
+          "path": ["api", "chat"]
+        },
+        "description": "Chat about a specific antique scan"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "test-user-{{$randomUUID}}",
+      "type": "string"
+    }
+  ]
+}
