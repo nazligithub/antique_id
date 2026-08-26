@@ -165,7 +165,7 @@ class AntiquePremiumView extends StatelessWidget {
                                     _buildPricingOption(
                                       index: 0,
                                       title: 'Weekly Access',
-                                      subtitle: 'Cancel anytime',
+                                      subtitle: '3 days free, then cancel anytime',
                                       price: viewModel.weeklyPrice,
                                       isSelected: viewModel.isWeeklySelected,
                                       isWeekly: true,
@@ -184,9 +184,7 @@ class AntiquePremiumView extends StatelessWidget {
                                       isSelected: viewModel.isYearlySelected,
                                       isWeekly: false,
                                       onTap: () => viewModel.selectYearly(),
-                                      savingsPercentage: viewModel.showYearlyAsMonthly
-                                          ? viewModel.savingsPercentage
-                                          : null,
+                                    ),
                                     ),
                                   ],
                                 )
@@ -242,13 +240,29 @@ class AntiquePremiumView extends StatelessWidget {
                                     ? const CircularProgressIndicator(
                                         color: Colors.white,
                                       )
-                                    : Text(
-                                        'Continue',
-                                        style: TextStyle(
-                                          fontSize: 18.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
+                                    : Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            viewModel.isWeeklySelected
+                                                ? 'Start Free Trial'
+                                                : 'Continue',
+                                            style: TextStyle(
+                                              fontSize: 18.sp,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          if (viewModel.isWeeklySelected)
+                                            Text(
+                                              '3 days free, then ${viewModel.weeklyPrice}/week',
+                                              style: TextStyle(
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.w400,
+                                                color: Colors.white.withValues(alpha: 0.9),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                               ),
                             ),
@@ -461,35 +475,46 @@ class AntiquePremiumView extends StatelessWidget {
               ],
             ),
           ),
-          // Discount badge for yearly plan
-          if (isYearly && savingsPercentage != null)
+          // FREE TRIAL badge for weekly plan
+          if (isWeekly)
             Positioned(
-              top: -10.h,
+              top: -12.h,
               right: 10.w,
               child: Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: 12.w,
-                  vertical: 4.h,
+                  horizontal: 14.w,
+                  vertical: 6.h,
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+                    colors: [
+                      const Color(0xFF10B981), // Green
+                      const Color(0xFF059669),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.4),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.star, color: Colors.white, size: 12.sp),
-                    SizedBox(width: 3.w),
+                    Icon(Icons.bolt, color: Colors.white, size: 14.sp),
+                    SizedBox(width: 4.w),
                     Text(
-                      'SAVE ${savingsPercentage ?? 70}%',
+                      'FREE TRIAL',
                       style: TextStyle(
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
