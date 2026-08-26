@@ -3,7 +3,7 @@ import 'package:appactor_flutter/appactor_flutter.dart';
 
 class AppactorHelper {
   static const String _publicKey = 'pk_E2Y9hdD2I4yoISWMVSIvhplssEfodblm';
-  static const String _proEntitlementId = 'premium';
+  static const String _proEntitlementId = 'pro_access';
 
   static AppactorHelper? _instance;
   static AppactorHelper get shared => _instance ??= AppactorHelper._();
