@@ -1,9 +1,14 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../constants/app_constants.dart';
+import '../providers/app_provider.dart';
 import 'loading_screen.dart';
+import 'antique_premium/antique_premium_view.dart';
 
 class AntiqueDetailScreen extends StatefulWidget {
   final String imagePath;
@@ -64,6 +69,20 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
 
   void _proceedToAnalysis() {
     if (croppedImagePath != null) {
+      final appProvider = Provider.of<AppProvider>(context, listen: false);
+
+      // Check if user is premium
+      if (!appProvider.isPremiumUser) {
+        // Show premium paywall
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AntiquePremiumView(fromOnboarding: false),
+          ),
+        );
+        return;
+      }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -84,11 +103,19 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F1E8),
-      body: SafeArea(
-        child: Column(
-          children: [
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F1E8),
+        body: Container(
+          decoration: AppDecorations.antiqueBackground,
+          child: SafeArea(
+            child: Column(
+              children: [
             Container(
               padding: EdgeInsets.all(20.w),
               child: Row(
@@ -224,7 +251,9 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
                       ),
                     ),
             ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );

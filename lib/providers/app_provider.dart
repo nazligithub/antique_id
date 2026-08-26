@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../helpers/storage_helper.dart';
+import '../helpers/appactor_helper.dart';
 
 class AppProvider extends ChangeNotifier {
   final StorageHelper _storageHelper = StorageHelper();
@@ -50,16 +51,78 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> loadUserPreferences() async {
-    _isPremiumUser = _storageHelper.isPremiumUser();
-    _currentLanguage = _storageHelper.getLanguage();
-    _currentTheme = _storageHelper.getAppTheme();
-    notifyListeners();
+    try {
+      // First check local storage for premium status (for offline mode)
+      bool localPremiumStatus = _storageHelper.isPremiumUser();
+
+      // Try to sync with Appactor
+      bool appactorSynced = false;
+      if (AppactorHelper.shared.isInitialized) {
+        appactorSynced = await AppactorHelper.shared.checkSubscription();
+        _isPremiumUser = AppactorHelper.shared.isActive;
+      }
+
+      // If Appactor sync failed, use local storage value
+      if (!appactorSynced && localPremiumStatus) {
+        debugPrint('Appactor sync failed, using local premium status: $localPremiumStatus');
+        _isPremiumUser = localPremiumStatus;
+      }
+
+      // Update storage to keep in sync
+      await _storageHelper.setPremiumUser(_isPremiumUser);
+
+      _currentLanguage = _storageHelper.getLanguage();
+      _currentTheme = _storageHelper.getAppTheme();
+
+      debugPrint('User preferences loaded - Premium: $_isPremiumUser, Language: $_currentLanguage');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading user preferences: $e');
+      // On error, use local storage values
+      _isPremiumUser = _storageHelper.isPremiumUser();
+      _currentLanguage = _storageHelper.getLanguage();
+      _currentTheme = _storageHelper.getAppTheme();
+      notifyListeners();
+    }
   }
 
   Future<void> setPremiumUser(bool value) async {
     _isPremiumUser = value;
     await _storageHelper.setPremiumUser(value);
+    debugPrint('Premium status updated: $value');
     notifyListeners();
+  }
+
+  /// Check and update premium status from Appactor
+  Future<void> refreshPremiumStatus() async {
+    try {
+      bool newStatus = await AppactorHelper.shared.checkSubscription();
+
+      if (_isPremiumUser != newStatus) {
+        _isPremiumUser = newStatus;
+        await _storageHelper.setPremiumUser(_isPremiumUser);
+        debugPrint('Premium status refreshed: $_isPremiumUser');
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error refreshing premium status: $e');
+    }
+  }
+
+  /// Sync purchases with Appactor (useful after app restart or restore)
+  Future<void> syncPurchases() async {
+    try {
+      bool newStatus = await AppactorHelper.shared.syncPurchases();
+
+      if (_isPremiumUser != newStatus) {
+        _isPremiumUser = newStatus;
+        await _storageHelper.setPremiumUser(_isPremiumUser);
+        debugPrint('Purchases synced - Premium status: $_isPremiumUser');
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error syncing purchases: $e');
+    }
   }
 
   Future<void> setLanguage(String language) async {

@@ -88,96 +88,240 @@ class _HomeViewState extends State<HomeView> {
         AppStrings.appName,
         style: AppTextStyles.h2.copyWith(color: AppColors.primary),
       ),
+      actions: [
+        IconButton(
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.settings);
+          },
+          icon: Icon(
+            Icons.settings,
+            color: AppColors.primary,
+            size: 24.sp,
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildPremiumCard(BuildContext context, HomeViewModel viewModel) {
-    return GestureDetector(
-      onTap: () => viewModel.onPremiumCardTapped(context),
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-        height: 140.h,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.primary, AppColors.secondary],
-          ),
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.black.withValues(alpha: 0.2),
-              blurRadius: 10.r,
-              offset: Offset(0, 5.h),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(AppSizes.paddingM),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          AppStrings.upgradePremium,
-                          style: AppTextStyles.h3.copyWith(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: AppSizes.paddingXS),
-                        Text(
-                          AppStrings.unlockFeatures,
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.white.withValues(alpha: 0.9),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSizes.paddingM,
-                        vertical: AppSizes.paddingXS,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(AppSizes.radiusS),
-                      ),
-                      child: Text(
-                        AppStrings.upgradeNow,
-                        style: AppTextStyles.button.copyWith(
-                          color: AppColors.primary,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, child) {
+        if (appProvider.isPremiumUser) {
+          // Premium user card
+          return GestureDetector(
+            onTap: () => viewModel.onPremiumCardTapped(context),
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+              constraints: BoxConstraints(minHeight: 120.h),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFD4AF37), Color(0xFFC19A6B)],
                 ),
+                borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.black.withValues(alpha: 0.2),
+                    blurRadius: 10.r,
+                    offset: Offset(0, 5.h),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSizes.paddingM),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star,
+                                      color: AppColors.white,
+                                      size: 20.sp,
+                                    ),
+                                    SizedBox(width: AppSizes.paddingXS),
+                                    Flexible(
+                                      child: Text(
+                                        'Premium Active',
+                                        style: AppTextStyles.h3.copyWith(
+                                          color: AppColors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: AppSizes.paddingXS),
+                                Text(
+                                  'Enjoy unlimited scans and AI chat!',
+                                  style: AppTextStyles.body2.copyWith(
+                                    color: AppColors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSizes.paddingM,
+                              vertical: AppSizes.paddingXS,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                              border: Border.all(
+                                color: AppColors.white,
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              'Tap to see features',
+                              style: AppTextStyles.button.copyWith(
+                                color: AppColors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 100.w,
+                    height: 100.h,
+                    margin: EdgeInsets.only(right: AppSizes.paddingM),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/antique_pro.png'),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Container(
-              width: 120.w,
-              height: 120.h,
-              margin: EdgeInsets.only(right: AppSizes.paddingM),
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/antique_pro.png'),
-                  fit: BoxFit.contain,
+          );
+        } else {
+          // Non-premium user card
+          return GestureDetector(
+            onTap: () => viewModel.onPremiumCardTapped(context),
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+              constraints: BoxConstraints(minHeight: 120.h),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.secondary],
                 ),
+                borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.black.withValues(alpha: 0.2),
+                    blurRadius: 10.r,
+                    offset: Offset(0, 5.h),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.all(AppSizes.paddingM),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  AppStrings.upgradePremium,
+                                  style: AppTextStyles.h3.copyWith(
+                                    color: AppColors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                SizedBox(height: AppSizes.paddingXS),
+                                Text(
+                                  AppStrings.unlockFeatures,
+                                  style: AppTextStyles.body2.copyWith(
+                                    color: AppColors.white.withValues(alpha: 0.9),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSizes.paddingM,
+                              vertical: AppSizes.paddingXS,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.white,
+                              borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                            ),
+                            child: Text(
+                              AppStrings.upgradeNow,
+                              style: AppTextStyles.button.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: 100.w,
+                    height: 100.h,
+                    margin: EdgeInsets.only(right: AppSizes.paddingM),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage('assets/antique_pro.png'),
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+      },
     );
   }
 
@@ -223,20 +367,29 @@ class _HomeViewState extends State<HomeView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      AppStrings.scanAntiqueIdentifier,
-                      style: AppTextStyles.body1.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
+                    Flexible(
+                      child: Text(
+                        AppStrings.scanAntiqueIdentifier,
+                        style: AppTextStyles.body1.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     SizedBox(height: AppSizes.paddingXS),
-                    Text(
-                      AppStrings.identifyAntiques,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        AppStrings.identifyAntiques,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -277,7 +430,7 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
               IconButton(
-                onPressed: () {},
+                onPressed: () => viewModel.onChatTapped(context),
                 icon: Icon(
                   Icons.arrow_forward_ios,
                   color: AppColors.primary,
@@ -296,7 +449,7 @@ class _HomeViewState extends State<HomeView> {
             itemBuilder: (context, index) {
               return _buildQuestionCard(
                 viewModel.popularQuestions[index],
-                () => viewModel.onQuestionTapped(viewModel.popularQuestions[index]),
+                () => viewModel.onQuestionTapped(context, viewModel.popularQuestions[index]),
               );
             },
           ),
@@ -323,16 +476,20 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              question,
-              style: AppTextStyles.body2.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
+            Expanded(
+              child: Text(
+                question,
+                style: AppTextStyles.body2.copyWith(
+                  color: AppColors.textPrimary,
+                  height: 1.4,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
+            SizedBox(height: AppSizes.paddingXS),
             Container(
               width: 36.w,
               height: 36.h,
@@ -479,10 +636,10 @@ class _HomeViewState extends State<HomeView> {
             Expanded(
               child: Padding(
                 padding: EdgeInsets.all(AppSizes.paddingS),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -529,7 +686,7 @@ class _HomeViewState extends State<HomeView> {
                     ],
                   ),
                 ],
-              ),
+                ),
               ),
             ),
           ],

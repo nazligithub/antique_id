@@ -13,7 +13,7 @@ class ApiService {
 
   void _initDio() {
     _dio = Dio(BaseOptions(
-      baseUrl: 'https://helpful-farand-nazli-0d882cfe.koyeb.app',
+      baseUrl: 'https://pkkkg088wooowow0coogks08.mobinaz.work',
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
@@ -49,6 +49,16 @@ class ApiService {
       final response = await _dio.post('/api/scan/antique', data: formData);
       return response.data;
     } catch (e) {
+      if (e is DioException && e.response?.data != null) {
+        final errorData = e.response!.data;
+        String errorMessage = 'Could not scan antique';
+
+        if (errorData is Map<String, dynamic>) {
+          errorMessage = errorData['message'] ?? errorMessage;
+        }
+
+        throw ApiException(errorMessage, e);
+      }
       throw ApiException('Could not scan antique', e);
     }
   }
@@ -98,6 +108,18 @@ class ApiService {
       return response.data;
     } catch (e) {
       throw ApiException('Could not send message', e);
+    }
+  }
+
+  Future<Map<String, dynamic>> chatWithExpert(String message) async {
+    try {
+      final response = await _dio.post('/api/chat', data: {
+        'message': message,
+        'context': 'antique_expert',
+      });
+      return response.data;
+    } catch (e) {
+      throw ApiException('Could not chat with expert', e);
     }
   }
 }

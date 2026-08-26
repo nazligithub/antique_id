@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/collection_service.dart';
 
 class CollectionSelectionBottomSheet extends StatefulWidget {
   final Function(String collectionName) onCollectionSelected;
@@ -18,12 +19,38 @@ class CollectionSelectionBottomSheet extends StatefulWidget {
 class _CollectionSelectionBottomSheetState
     extends State<CollectionSelectionBottomSheet> {
   final TextEditingController _controller = TextEditingController();
-  List<String> collections = []; // Bu liste gerçek koleksiyonlardan gelecek
+  List<String> collections = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExistingCollections();
+  }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadExistingCollections() async {
+    try {
+      final collectionNames = await CollectionService().getCollectionNames();
+      if (mounted) {
+        setState(() {
+          collections = collectionNames;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+      debugPrint('Error loading collections: $e');
+    }
   }
 
   void _showNewCollectionDialog() {
@@ -91,9 +118,11 @@ class _CollectionSelectionBottomSheetState
                     child: ElevatedButton(
                       onPressed: () {
                         if (_controller.text.trim().isNotEmpty) {
-                          widget.onCollectionSelected(_controller.text.trim());
-                          Navigator.pop(context);
-                          Navigator.pop(context);
+                          final collectionName = _controller.text.trim();
+                          _controller.clear();
+                          Navigator.pop(context); // Dialog'u kapat
+                          widget.onCollectionSelected(collectionName);
+                          Navigator.pop(context); // Bottom sheet'i kapat
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -212,7 +241,15 @@ class _CollectionSelectionBottomSheetState
                     ),
                   ),
                   SizedBox(height: 20.h),
-                  if (collections.isEmpty)
+                  if (isLoading)
+                    Expanded(
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: const Color(0xFF8B4513),
+                        ),
+                      ),
+                    )
+                  else if (collections.isEmpty)
                     Expanded(
                       child: Center(
                         child: Column(

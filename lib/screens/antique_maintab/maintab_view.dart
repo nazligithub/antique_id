@@ -31,7 +31,6 @@ class _MainTabViewState extends State<MainTabView> {
             index: viewModel.currentIndex,
             children: const [
               HomeView(),
-              ScanView(),
               CollectionView(),
             ],
           ),
@@ -79,16 +78,15 @@ class _MainTabViewState extends State<MainTabView> {
           ],
         );
       },
-      activeIndex: viewModel.currentIndex == 1 ? 0 : (viewModel.currentIndex == 0 ? 0 : 1),
+      activeIndex: viewModel.currentIndex,
       onTap: (index) {
-        int realIndex = index == 0 ? 0 : 2;
-        viewModel.setIndex(realIndex);
-        appProvider.setTabIndex(realIndex);
+        viewModel.setIndex(index);
+        appProvider.setTabIndex(index);
 
         if (index == 0 && viewModel.currentIndex == 0) {
           appProvider.homeScrollToTopRequested = true;
           viewModel.onHomeTabDoubleTap();
-        } else if (index == 1 && viewModel.currentIndex == 2) {
+        } else if (index == 1 && viewModel.currentIndex == 1) {
           appProvider.collectionScrollToTopRequested = true;
           viewModel.onCollectionTabDoubleTap();
         }
@@ -99,6 +97,8 @@ class _MainTabViewState extends State<MainTabView> {
       rightCornerRadius: 0,
       backgroundColor: AppColors.white,
       height: 70.h,
+      splashColor: Colors.transparent,
+      splashRadius: 0,
     );
   }
 
@@ -108,8 +108,12 @@ class _MainTabViewState extends State<MainTabView> {
       height: 70.h,
       child: FloatingActionButton(
         onPressed: () {
-          viewModel.setIndex(1);
-          appProvider.setTabIndex(1);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ScanView(),
+            ),
+          );
         },
         backgroundColor: Colors.transparent,
         elevation: 0,

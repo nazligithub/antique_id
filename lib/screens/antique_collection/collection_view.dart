@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
@@ -42,25 +43,34 @@ class _CollectionViewState extends State<CollectionView> {
           );
         }
 
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          body: Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/background/antique_background.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          ),
+          child: Scaffold(
+            backgroundColor: AppColors.background,
+            body: Container(
+            decoration: AppDecorations.antiqueBackground,
             child: SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(viewModel),
-                  Expanded(
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: _buildHeader(viewModel),
+                  ),
+                  if (viewModel.collectionNames.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildCollectionTabs(viewModel),
+                    ),
+                  SliverToBoxAdapter(
                     child: _buildCollectionContent(viewModel),
                   ),
                 ],
               ),
             ),
+          ),
           ),
         );
       },
@@ -68,8 +78,9 @@ class _CollectionViewState extends State<CollectionView> {
   }
 
   Widget _buildHeader(CollectionViewModel viewModel) {
-    final totalCollections = viewModel.collections.length;
-    final totalItems = viewModel.collections.values.fold(0, (sum, list) => sum + list.length);
+    final displayCollections = viewModel.filteredCollections;
+    final totalCollections = displayCollections.length;
+    final totalItems = displayCollections.values.fold(0, (sum, list) => sum + list.length);
 
     return Container(
       padding: EdgeInsets.all(AppSizes.paddingM),
@@ -98,7 +109,7 @@ class _CollectionViewState extends State<CollectionView> {
               ),
               if (viewModel.collections.isNotEmpty)
                 GestureDetector(
-                  onTap: () => viewModel.createNewCollection(),
+                  onTap: () => viewModel.createNewCollection(context),
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: AppSizes.paddingM,
@@ -192,6 +203,100 @@ class _CollectionViewState extends State<CollectionView> {
     );
   }
 
+  Widget _buildCollectionTabs(CollectionViewModel viewModel) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: AppSizes.paddingM),
+      height: 50.h,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+        child: Row(
+          children: [
+            // All Collections Tab
+            GestureDetector(
+              onTap: () => viewModel.selectCollection(null),
+              child: Container(
+                margin: EdgeInsets.only(right: AppSizes.paddingS),
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSizes.paddingL,
+                  vertical: AppSizes.paddingS,
+                ),
+                decoration: BoxDecoration(
+                  color: viewModel.selectedCollection == null
+                      ? AppColors.primary
+                      : AppColors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.apps,
+                      size: 18.sp,
+                      color: viewModel.selectedCollection == null
+                          ? AppColors.white
+                          : AppColors.textSecondary,
+                    ),
+                    SizedBox(width: AppSizes.paddingXS),
+                    Text(
+                      'All',
+                      style: AppTextStyles.body2.copyWith(
+                        color: viewModel.selectedCollection == null
+                            ? AppColors.white
+                            : AppColors.textSecondary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Individual Collection Tabs
+            ...viewModel.collectionNames.map((collectionName) =>
+              GestureDetector(
+                onTap: () => viewModel.selectCollection(collectionName),
+                child: Container(
+                  margin: EdgeInsets.only(right: AppSizes.paddingS),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingL,
+                    vertical: AppSizes.paddingS,
+                  ),
+                  decoration: BoxDecoration(
+                    color: viewModel.selectedCollection == collectionName
+                        ? AppColors.primary
+                        : AppColors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.folder,
+                        size: 18.sp,
+                        color: viewModel.selectedCollection == collectionName
+                            ? AppColors.white
+                            : AppColors.textSecondary,
+                      ),
+                      SizedBox(width: AppSizes.paddingXS),
+                      Text(
+                        collectionName,
+                        style: AppTextStyles.body2.copyWith(
+                          color: viewModel.selectedCollection == collectionName
+                              ? AppColors.white
+                              : AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildCollectionContent(CollectionViewModel viewModel) {
     if (viewModel.isLoading) {
@@ -238,6 +343,30 @@ class _CollectionViewState extends State<CollectionView> {
       );
     }
 
+    final displayCollections = viewModel.filteredCollections;
+
+    if (displayCollections.isEmpty && !viewModel.collections.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.folder_off,
+              color: AppColors.grey,
+              size: 64.sp,
+            ),
+            SizedBox(height: AppSizes.paddingM),
+            Text(
+              'No items in this collection',
+              style: AppTextStyles.h3.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (viewModel.collections.isEmpty) {
       return Center(
         child: Column(
@@ -264,7 +393,7 @@ class _CollectionViewState extends State<CollectionView> {
             ),
             SizedBox(height: AppSizes.paddingL),
             ElevatedButton(
-              onPressed: () => viewModel.createNewCollection(),
+              onPressed: () => viewModel.createNewCollection(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
@@ -296,15 +425,14 @@ class _CollectionViewState extends State<CollectionView> {
       );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
+    return Container(
       padding: EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-      itemCount: viewModel.collections.keys.length,
-      itemBuilder: (context, index) {
-        final collectionName = viewModel.collections.keys.elementAt(index);
-        final items = viewModel.collections[collectionName]!;
-        return _buildCollectionSection(context, collectionName, items, viewModel);
-      },
+      child: Column(
+        children: displayCollections.keys.map((collectionName) {
+          final items = displayCollections[collectionName]!;
+          return _buildCollectionSection(context, collectionName, items, viewModel);
+        }).toList(),
+      ),
     );
   }
 
@@ -319,22 +447,75 @@ class _CollectionViewState extends State<CollectionView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSizes.paddingS),
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: AppSizes.paddingS),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSizes.paddingM,
+              vertical: AppSizes.paddingS,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(AppSizes.radiusS),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  collectionName,
-                  style: AppTextStyles.h3.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.bold,
+                Container(
+                  padding: EdgeInsets.all(6.w),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Icon(
+                    Icons.folder,
+                    color: AppColors.primary,
+                    size: 16.sp,
                   ),
                 ),
-                Text(
-                  '${items.length} item${items.length != 1 ? 's' : ''}',
-                  style: AppTextStyles.caption.copyWith(
-                    color: AppColors.textSecondary,
+                SizedBox(width: AppSizes.paddingS),
+                Expanded(
+                  child: Text(
+                    collectionName,
+                    style: AppTextStyles.body1.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 8.w,
+                    vertical: 4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    '${items.length}',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppSizes.paddingS),
+                GestureDetector(
+                  onTap: () => _showRenameCollectionDialog(context, collectionName, viewModel),
+                  child: Container(
+                    padding: EdgeInsets.all(6.w),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Icon(
+                      Icons.edit,
+                      color: AppColors.primary,
+                      size: 14.sp,
+                    ),
                   ),
                 ),
               ],
@@ -415,6 +596,7 @@ class _CollectionViewState extends State<CollectionView> {
                 padding: EdgeInsets.all(AppSizes.paddingM),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       antique.name,
@@ -422,47 +604,6 @@ class _CollectionViewState extends State<CollectionView> {
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: AppSizes.paddingXS),
-                    Text(
-                      antique.description,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: AppSizes.paddingS),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          antique.price,
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppSizes.paddingS,
-                            vertical: AppSizes.paddingXS,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AppSizes.radiusS),
-                          ),
-                          child: Text(
-                            antique.era,
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -524,6 +665,100 @@ class _CollectionViewState extends State<CollectionView> {
               'Remove',
               style: AppTextStyles.body2.copyWith(
                 color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRenameCollectionDialog(
+    BuildContext context,
+    String currentName,
+    CollectionViewModel viewModel,
+  ) {
+    final TextEditingController controller = TextEditingController(text: currentName);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.cardBg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        ),
+        title: Text(
+          'Rename Collection',
+          style: AppTextStyles.h3.copyWith(
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            hintText: 'Collection Name...',
+            hintStyle: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 16.sp,
+            ),
+            border: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.primary),
+            ),
+          ),
+          style: AppTextStyles.body1.copyWith(
+            color: AppColors.textPrimary,
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: AppTextStyles.body2.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (controller.text.trim().isNotEmpty && controller.text.trim() != currentName) {
+                try {
+                  await viewModel.renameCollection(currentName, controller.text.trim());
+                  Navigator.pop(context);
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Collection renamed to "${controller.text.trim()}"'),
+                        backgroundColor: AppColors.primary,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to rename collection: ${e.toString()}'),
+                        backgroundColor: AppColors.error,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              } else {
+                Navigator.pop(context);
+              }
+            },
+            child: Text(
+              'Rename',
+              style: AppTextStyles.body2.copyWith(
+                color: AppColors.primary,
                 fontWeight: FontWeight.bold,
               ),
             ),

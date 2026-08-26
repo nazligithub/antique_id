@@ -26,9 +26,11 @@ class AntiquePremiumView extends StatelessWidget {
               statusBarIconBrightness: Brightness.dark,
               statusBarColor: Colors.transparent,
             ),
-            child: Scaffold(
-              backgroundColor: Colors.black,
-              body: Stack(
+            child: PopScope(
+              canPop: false, // Disable swipe back gesture
+              child: Scaffold(
+                backgroundColor: Colors.black,
+                body: Stack(
                 children: [
                   // Background image with gradient
                   Positioned(
@@ -157,30 +159,45 @@ class AntiquePremiumView extends StatelessWidget {
                         // Pricing options
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 20.w),
-                          child: Column(
-                            children: [
-                              _buildPricingOption(
-                                index: 0,
-                                title: 'Weekly Access',
-                                subtitle: 'Cancel anytime',
-                                price: viewModel.weeklyPrice,
-                                isSelected: viewModel.isWeeklySelected,
-                                isWeekly: true,
-                                onTap: () => viewModel.selectWeekly(),
-                              ),
-                              SizedBox(height: 12.h),
-                              _buildPricingOption(
-                                index: 1,
-                                title: 'Yearly Access',
-                                subtitle: '${viewModel.yearlyPrice} / year',
-                                price: viewModel.yearlyWeeklyPrice,
-                                isSelected: viewModel.isYearlySelected,
-                                isWeekly: false,
-                                onTap: () => viewModel.selectYearly(),
-                                savingsPercentage: viewModel.savingsPercentage,
-                              ),
-                            ],
-                          ),
+                          child: viewModel.configLoaded
+                              ? Column(
+                                  children: [
+                                    _buildPricingOption(
+                                      index: 0,
+                                      title: 'Weekly Access',
+                                      subtitle: 'Cancel anytime',
+                                      price: viewModel.weeklyPrice,
+                                      isSelected: viewModel.isWeeklySelected,
+                                      isWeekly: true,
+                                      onTap: () => viewModel.selectWeekly(),
+                                    ),
+                                    SizedBox(height: 12.h),
+                                    _buildPricingOption(
+                                      index: 1,
+                                      title: 'Yearly Access',
+                                      subtitle: viewModel.showYearlyAsMonthly
+                                          ? '${viewModel.yearlyPrice} / year'
+                                          : 'Cancel anytime',
+                                      price: viewModel.showYearlyAsMonthly
+                                          ? viewModel.yearlyWeeklyPrice
+                                          : viewModel.yearlyPrice,
+                                      isSelected: viewModel.isYearlySelected,
+                                      isWeekly: false,
+                                      onTap: () => viewModel.selectYearly(),
+                                      savingsPercentage: viewModel.showYearlyAsMonthly
+                                          ? viewModel.savingsPercentage
+                                          : null,
+                                    ),
+                                  ],
+                                )
+                              : Container(
+                                  height: 140.h,
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
                         ),
 
                         SizedBox(height: 24.h),
@@ -193,7 +210,7 @@ class AntiquePremiumView extends StatelessWidget {
                                 ? null
                                 : () async {
                                     final purchased = await viewModel
-                                        .purchase();
+                                        .purchase(context);
                                     if (purchased) {
                                       // Save onboarding completion and navigate to main tab
                                       await viewModel.saveOnboardingCompletion();
@@ -306,7 +323,7 @@ class AntiquePremiumView extends StatelessWidget {
                             ),
                             GestureDetector(
                               onTap: () async {
-                                final restored = await viewModel.restore();
+                                final restored = await viewModel.restore(context);
                                 if (restored && context.mounted) {
                                   Navigator.pop(context, true);
                                 }
@@ -327,6 +344,7 @@ class AntiquePremiumView extends StatelessWidget {
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           );
@@ -444,7 +462,7 @@ class AntiquePremiumView extends StatelessWidget {
             ),
           ),
           // Discount badge for yearly plan
-          if (isYearly)
+          if (isYearly && savingsPercentage != null)
             Positioned(
               top: -10.h,
               right: 10.w,

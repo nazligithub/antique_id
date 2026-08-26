@@ -1,11 +1,16 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
+import '../constants/app_constants.dart';
 import '../services/api_service.dart';
+import '../providers/app_provider.dart';
 import 'antique_solution_screen.dart';
+import 'antique_premium/antique_premium_view.dart';
 
 class LoadingScreen extends StatefulWidget {
   final String imagePath;
@@ -119,11 +124,18 @@ class _LoadingScreenState extends State<LoadingScreen>
           isAnalyzing = false;
         });
 
+        String errorMessage = 'Analysis failed';
+        if (e.toString().contains('ApiException:')) {
+          errorMessage = e.toString().replaceFirst('ApiException: ', '');
+        } else {
+          errorMessage = e.toString();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Analysis failed: ${e.toString()}'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
+            duration: const Duration(seconds: 4),
           ),
         );
 
@@ -142,13 +154,23 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F1E8),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(20.w),
-          child: Column(
-            children: [
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: PopScope(
+        canPop: false, // Disable back navigation
+        child: Scaffold(
+          backgroundColor: const Color(0xFFF5F1E8),
+          body: Container(
+            decoration: AppDecorations.antiqueBackground,
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Column(
+                  children: [
               SizedBox(height: 40.h),
               Text(
                 'Analyzing Your Antique',
@@ -264,11 +286,13 @@ class _LoadingScreenState extends State<LoadingScreen>
                 ),
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: 20.h),
-            ],
+                  SizedBox(height: 20.h),
+                ],
+              ),
+            ),
           ),
         ),
       ),
-    );
+    ));
   }
 }

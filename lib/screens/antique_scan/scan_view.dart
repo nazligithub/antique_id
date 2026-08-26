@@ -44,14 +44,21 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
 
     if (state == AppLifecycleState.inactive) {
       _controller?.dispose();
-    } else if (state == AppLifecycleState.resumed) {
+      setState(() {
+        _isInitialized = false;
+      });
+    } else if (state == AppLifecycleState.resumed && _isInitialized) {
       _initializeCamera();
     }
   }
 
+
   Future<void> _initializeCamera() async {
     try {
-      _cameras = await availableCameras();
+      if (_cameras == null || _cameras!.isEmpty) {
+        _cameras = await availableCameras();
+      }
+
       if (_cameras != null && _cameras!.isNotEmpty) {
         _controller = CameraController(
           _cameras![0],
@@ -161,32 +168,39 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SizedBox(width: 40.w),
-          Column(
-            children: [
-              Text(
-                'Scan Antique',
-                style: AppTextStyles.h2.copyWith(
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              SizedBox(height: AppSizes.paddingS),
-              Text(
-                'Capture or upload an image to identify',
-                style: AppTextStyles.body2.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
           IconButton(
-            onPressed: _toggleFlash,
+            onPressed: () => Navigator.pop(context),
             icon: Icon(
-              _isFlashOn ? Icons.flash_on : Icons.flash_off,
+              Icons.arrow_back,
               color: AppColors.primary,
               size: 28.sp,
             ),
           ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Scan Antique',
+                  style: AppTextStyles.h2.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: AppSizes.paddingS),
+                Text(
+                  'Capture or upload an image to identify',
+                  style: AppTextStyles.body2.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: 40.w),
         ],
       ),
     );
@@ -212,22 +226,13 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
                           aspectRatio: 1 / _controller!.value.aspectRatio,
                           child: CameraPreview(_controller!),
                         )
-                      : Center(
-                          child: Container(
-                            width: 120.w,
-                            height: 120.h,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.3),
-                                width: 2.w,
-                              ),
-                            ),
-                            child: Icon(
-                              Icons.center_focus_strong,
+                      : Container(
+                          color: Colors.black,
+                          child: Center(
+                            child: CircularProgressIndicator(
                               color: AppColors.primary,
-                              size: 50.sp,
-            ),
+                              strokeWidth: 2.w,
+                            ),
                           ),
                         ),
                 ),
@@ -279,15 +284,15 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildScanButton(
+              _buildControlButton(
                 icon: Icons.photo_library,
-                label: 'Gallery',
                 onTap: _pickFromGallery,
               ),
-              _buildScanButton(
-                icon: Icons.camera_alt,
-                label: 'Camera',
-                onTap: _takePicture,
+              _buildCameraButton(),
+              _buildControlButton(
+                icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                onTap: _toggleFlash,
+                isFlash: true,
               ),
             ],
           ),
@@ -330,22 +335,19 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildScanButton({
+  Widget _buildControlButton({
     required IconData icon,
-    required String label,
     required VoidCallback onTap,
+    bool isFlash = false,
   }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 120.w,
-        padding: EdgeInsets.symmetric(
-          vertical: AppSizes.paddingM,
-          horizontal: AppSizes.paddingL,
-        ),
+        width: 60.w,
+        height: 60.h,
         decoration: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          color: (isFlash && _isFlashOn) ? AppColors.primary : AppColors.white.withValues(alpha: 0.9),
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
               color: AppColors.black.withValues(alpha: 0.2),
@@ -354,22 +356,40 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
             ),
           ],
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: AppColors.white,
-              size: 28.sp,
-            ),
-            SizedBox(height: AppSizes.paddingS),
-            Text(
-              label,
-              style: AppTextStyles.body2.copyWith(
-                color: AppColors.white,
-                fontWeight: FontWeight.w600,
-              ),
+        child: Icon(
+          icon,
+          color: (isFlash && _isFlashOn) ? AppColors.white : AppColors.primary,
+          size: 28.sp,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCameraButton() {
+    return GestureDetector(
+      onTap: _takePicture,
+      child: Container(
+        width: 80.w,
+        height: 80.h,
+        decoration: BoxDecoration(
+          color: AppColors.primary,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColors.white,
+            width: 4.w,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.black.withValues(alpha: 0.3),
+              blurRadius: 12.r,
+              offset: Offset(0, 6.h),
             ),
           ],
+        ),
+        child: Icon(
+          Icons.camera_alt,
+          color: AppColors.white,
+          size: 36.sp,
         ),
       ),
     );
@@ -465,17 +485,27 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildActionButton(
-                      label: 'Scan Again',
-                      icon: Icons.refresh,
-                      onTap: () => viewModel.clearResult(),
-                      isPrimary: false,
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(right: AppSizes.paddingS),
+                        child: _buildActionButton(
+                          label: 'Scan Again',
+                          icon: Icons.refresh,
+                          onTap: () => viewModel.clearResult(),
+                          isPrimary: false,
+                        ),
+                      ),
                     ),
-                    _buildActionButton(
-                      label: 'Add to Collection',
-                      icon: Icons.add_circle,
-                      onTap: () => viewModel.addToCollection(),
-                      isPrimary: true,
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(left: AppSizes.paddingS),
+                        child: _buildActionButton(
+                          label: 'Add to Collection',
+                          icon: Icons.add_circle,
+                          onTap: () => viewModel.addToCollection(),
+                          isPrimary: true,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -542,11 +572,15 @@ class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
               size: 20.sp,
             ),
             SizedBox(width: AppSizes.paddingS),
-            Text(
-              label,
-              style: AppTextStyles.button.copyWith(
-                color: isPrimary ? AppColors.white : AppColors.primary,
-                fontSize: 14.sp,
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.button.copyWith(
+                  color: isPrimary ? AppColors.white : AppColors.primary,
+                  fontSize: 14.sp,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

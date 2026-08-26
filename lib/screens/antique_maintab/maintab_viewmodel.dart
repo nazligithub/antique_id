@@ -20,8 +20,6 @@ class MainTabViewModel extends ChangeNotifier {
     debugPrint('Collection tab double tapped');
   }
 
-  void selectFloatingActionButton() {
-    setIndex(1); // Scan ekranı ortada olduğu için index 1
-  }
+  // Scan screen is now push navigation, no longer needed
 
 }

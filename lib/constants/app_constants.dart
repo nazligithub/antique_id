@@ -75,6 +75,7 @@ class AppRoutes {
   static const String scan = '/scan';
   static const String collection = '/collection';
   static const String antiqueDetail = '/antique-detail';
+  static const String settings = '/settings';
 }
 
 class AppStrings {
@@ -117,10 +118,17 @@ class AppSizes {
   static double get radiusS => 8.0.r;
   static double get radiusM => 12.0.r;
   static double get radiusL => 16.0.r;
-  static double get radiusXL => 24.0.r;
+}
 
-  static double get iconS => 16.0.w;
-  static double get iconM => 24.0.w;
-  static double get iconL => 32.0.w;
-  static double get iconXL => 48.0.w;
+class AppImages {
+  static const String antiqueBackground = 'assets/background/antique_background.png';
+}
+
+class AppDecorations {
+  static const BoxDecoration antiqueBackground = BoxDecoration(
+    image: DecorationImage(
+      image: AssetImage(AppImages.antiqueBackground),
+      fit: BoxFit.cover,
+    ),
+  );
 }

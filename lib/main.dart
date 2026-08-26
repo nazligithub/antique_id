@@ -5,7 +5,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'constants/app_constants.dart';
 import 'helpers/storage_helper.dart';
-import 'helpers/revenuecat_helper.dart';
+import 'helpers/appactor_helper.dart';
+import 'services/supabase_service.dart';
 
 import 'providers/app_provider.dart';
 import 'screens/antique_splash/splash_viewmodel.dart';
@@ -17,12 +18,14 @@ import 'screens/antique_scan/scan_viewmodel.dart';
 import 'screens/antique_collection/collection_viewmodel.dart';
 import 'screens/antique_premium/antique_premium_view.dart';
 import 'screens/antique_onboard/antique_onboard_view.dart';
+import 'screens/settings_screen.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageHelper().init();
-  await RevenueCatHelper.shared.initialize();
+  await AppactorHelper.shared.initialize();
+  await SupabaseService.initialize();
   runApp(const MyApp());
 }
 
@@ -126,6 +129,7 @@ class MyApp extends StatelessWidget {
       AppRoutes.maintab: (context) => const MainTabView(),
       '/onboard': (context) => const AntiqueOnboardView(),
       '/paywall': (context) => const AntiquePremiumView(),
+      AppRoutes.settings: (context) => const SettingsScreen(),
     };
   }
 }
