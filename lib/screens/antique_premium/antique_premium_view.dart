@@ -185,7 +185,6 @@ class AntiquePremiumView extends StatelessWidget {
                                       isWeekly: false,
                                       onTap: () => viewModel.selectYearly(),
                                     ),
-                                    ),
                                   ],
                                 )
                               : Container(
