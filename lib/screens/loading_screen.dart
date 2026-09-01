@@ -5,20 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lottie/lottie.dart';
-import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
 import '../services/api_service.dart';
-import '../providers/app_provider.dart';
 import 'antique_solution_screen.dart';
-import 'antique_premium/antique_premium_view.dart';
 
 class LoadingScreen extends StatefulWidget {
   final String imagePath;
 
-  const LoadingScreen({
-    super.key,
-    required this.imagePath,
-  });
+  const LoadingScreen({super.key, required this.imagePath});
 
   @override
   State<LoadingScreen> createState() => _LoadingScreenState();
@@ -27,12 +21,16 @@ class LoadingScreen extends StatefulWidget {
 class _LoadingScreenState extends State<LoadingScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
-  late Animation<double> _progressAnimation;
   Timer? _tipTimer;
   Timer? _progressTimer;
   int currentTipIndex = 0;
   double progress = 0.0;
+  double _targetProgress = 0.12;
+  String _stepLabel = 'Processing image';
   bool isAnalyzing = true;
+
+  // How full the bar should be once each server-reported step is reached.
+  static const Map<int, double> _stepTargets = {1: 0.18, 2: 0.65, 3: 0.92};
 
   final List<String> tips = [
     "Did you know? The oldest known antique is over 4,000 years old!",
@@ -42,7 +40,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     "Interesting: Antiques are items that are at least 100 years old.",
     "Tip: Original condition often matters more than restoration.",
     "Did you know? Provenance can significantly increase an item's value.",
-    "Fun fact: Some modern items are already considered collectibles!"
+    "Fun fact: Some modern items are already considered collectibles!",
   ];
 
   @override
@@ -59,14 +57,6 @@ class _LoadingScreenState extends State<LoadingScreen>
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat(reverse: true);
-
-    _progressAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
   }
 
   void _startTipRotation() {
@@ -79,24 +69,42 @@ class _LoadingScreenState extends State<LoadingScreen>
     });
   }
 
+  /// Eases the bar toward the step the server last reported, so it keeps
+  /// moving during a long step without ever running ahead of the real work.
   void _startProgressAnimation() {
-    _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (mounted && isAnalyzing) {
-        setState(() {
-          progress = min(0.95, progress + (Random().nextDouble() * 0.02));
-        });
-      }
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 120), (timer) {
+      if (!mounted || !isAnalyzing) return;
+      if (progress >= _targetProgress) return;
+      setState(() {
+        progress = min(_targetProgress, progress + (_targetProgress - progress) * 0.03 + 0.0009);
+      });
+    });
+  }
+
+  void _applyStatus(Map<String, dynamic> status) {
+    final step = status['step'];
+    final label = status['step_label'];
+    if (!mounted) return;
+    setState(() {
+      if (label is String && label.isNotEmpty) _stepLabel = label;
+      if (step is int) _targetProgress = _stepTargets[step] ?? _targetProgress;
     });
   }
 
   Future<void> _analyzeAntique() async {
     try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      final result = await ApiService().scanAntique(
+      final accepted = await ApiService().startScan(
         widget.imagePath,
         additionalInfo: "Scanned from mobile app",
       );
+
+      final accData = accepted['data'];
+      final started = accData is Map<String, dynamic> ? accData : const <String, dynamic>{};
+
+      // A server without the async migration answers with the finished scan.
+      final result = started['status'] == 'processing'
+          ? await _awaitResult(started['scan_id'])
+          : accepted;
 
       if (mounted) {
         setState(() {
@@ -144,6 +152,37 @@ class _LoadingScreenState extends State<LoadingScreen>
     }
   }
 
+  /// Polls until the scan finishes, then returns it in the same envelope a
+  /// synchronous scan uses.
+  Future<Map<String, dynamic>> _awaitResult(dynamic scanId) async {
+    final deadline = DateTime.now().add(const Duration(minutes: 5));
+
+    while (DateTime.now().isBefore(deadline)) {
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) throw ApiException('Scan cancelled', null);
+
+      final response = await ApiService().getScanStatus(scanId);
+      final raw = response['data'];
+      final status = raw is Map<String, dynamic> ? raw : const <String, dynamic>{};
+      _applyStatus(status);
+
+      if (status['status'] == 'complete') {
+        return {'success': true, 'data': status['result']};
+      }
+      if (status['status'] == 'failed') {
+        throw ApiException(
+          status['error'] as String? ?? 'Analysis failed',
+          null,
+        );
+      }
+    }
+
+    throw ApiException(
+      'This is taking longer than usual. Your scan is still saved — check your history in a moment.',
+      null,
+    );
+  }
+
   @override
   void dispose() {
     _animationController.dispose();
@@ -171,128 +210,133 @@ class _LoadingScreenState extends State<LoadingScreen>
                 padding: EdgeInsets.all(20.w),
                 child: Column(
                   children: [
-              SizedBox(height: 40.h),
-              Text(
-                'Analyzing Your Antique',
-                style: GoogleFonts.playfairDisplay(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2D1810),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 8.h),
-              Text(
-                'This may take 10-15 seconds',
-                style: GoogleFonts.lora(
-                  fontSize: 16.sp,
-                  color: const Color(0xFF2D1810).withOpacity(0.7),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 60.h),
-              SizedBox(
-                height: 200.h,
-                child: Lottie.asset(
-                  'assets/antique_loading.json',
-                  fit: BoxFit.contain,
-                  repeat: true,
-                ),
-              ),
-              SizedBox(height: 40.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: Column(
-                  children: [
-                    LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.grey.withOpacity(0.3),
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Color(0xFF8B4513),
-                      ),
-                      minHeight: 8.h,
-                    ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: 40.h),
                     Text(
-                      '${(progress * 100).toInt()}%',
-                      style: GoogleFonts.lora(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF8B4513),
+                      'Analyzing Your Antique',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF2D1810),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 8.h),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      child: Text(
+                        _stepLabel,
+                        key: ValueKey(_stepLabel),
+                        style: GoogleFonts.lora(
+                          fontSize: 16.sp,
+                          color: const Color(0xFF2D1810).withValues(alpha: 0.7),
+                        ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 60.h),
-              AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  return Container(
-                    padding: EdgeInsets.all(20.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                    SizedBox(height: 60.h),
+                    SizedBox(
+                      height: 200.h,
+                      child: Lottie.asset(
+                        'assets/antique_loading.json',
+                        fit: BoxFit.contain,
+                        repeat: true,
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40.w,
-                          height: 40.w,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF8B4513),
-                            shape: BoxShape.circle,
+                    SizedBox(height: 40.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: Column(
+                        children: [
+                          LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: Colors.grey.withValues(alpha: 0.3),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              Color(0xFF8B4513),
+                            ),
+                            minHeight: 8.h,
                           ),
-                          child: Icon(
-                            Icons.lightbulb_outline,
-                            color: Colors.white,
-                            size: 20.sp,
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 500),
-                            child: Text(
-                              tips[currentTipIndex],
-                              key: ValueKey(currentTipIndex),
-                              style: GoogleFonts.lora(
-                                fontSize: 14.sp,
-                                color: const Color(0xFF2D1810),
-                                height: 1.4,
-                              ),
+                          SizedBox(height: 16.h),
+                          Text(
+                            '${(progress * 100).toInt()}%',
+                            style: GoogleFonts.lora(
+                              fontSize: 18.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF8B4513),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  );
-                },
-              ),
-              const Spacer(),
-              Text(
-                'Please wait while we identify your antique...',
-                style: GoogleFonts.lora(
-                  fontSize: 14.sp,
-                  color: const Color(0xFF2D1810).withOpacity(0.6),
-                  fontStyle: FontStyle.italic,
+                    SizedBox(height: 60.h),
+                    AnimatedBuilder(
+                      animation: _animationController,
+                      builder: (context, child) {
+                        return Container(
+                          padding: EdgeInsets.all(20.w),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(12.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 40.w,
+                                height: 40.w,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF8B4513),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.lightbulb_outline,
+                                  color: Colors.white,
+                                  size: 20.sp,
+                                ),
+                              ),
+                              SizedBox(width: 16.w),
+                              Expanded(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 500),
+                                  child: Text(
+                                    tips[currentTipIndex],
+                                    key: ValueKey(currentTipIndex),
+                                    style: GoogleFonts.lora(
+                                      fontSize: 14.sp,
+                                      color: const Color(0xFF2D1810),
+                                      height: 1.4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const Spacer(),
+                    Text(
+                      'A detailed appraisal can take up to a minute.',
+                      style: GoogleFonts.lora(
+                        fontSize: 14.sp,
+                        color: const Color(0xFF2D1810).withValues(alpha: 0.6),
+                        fontStyle: FontStyle.italic,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20.h),
+                  ],
                 ),
-                textAlign: TextAlign.center,
-              ),
-                  SizedBox(height: 20.h),
-                ],
               ),
             ),
           ),
         ),
       ),
-    ));
+    );
   }
 }

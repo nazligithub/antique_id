@@ -1,11 +1,17 @@
+import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
 
+  static const String _userIdKey = 'api_user_id';
+
   late final Dio _dio;
+  Future<String>? _userIdRequest;
 
   ApiService._internal() {
     _initDio();
@@ -15,10 +21,17 @@ class ApiService {
     _dio = Dio(BaseOptions(
       baseUrl: 'https://pkkkg088wooowow0coogks08.mobinaz.work',
       connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
+      // Covers the synchronous scan path, which servers still fall back to.
+      receiveTimeout: const Duration(seconds: 180),
       headers: {
         'Content-Type': 'application/json',
-        'x-user-id': 'test-user-${DateTime.now().millisecondsSinceEpoch}',
+      },
+    ));
+
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        options.headers['x-user-id'] = await _userId();
+        handler.next(options);
       },
     ));
 
@@ -28,6 +41,34 @@ class ApiService {
         responseBody: true,
       ));
     }
+  }
+
+  /// A stable per-install identifier.
+  ///
+  /// This used to be regenerated on every launch, which made the server treat
+  /// each session as a brand new user and left scan history permanently empty.
+  Future<String> _userId() {
+    return _userIdRequest ??= _loadUserId();
+  }
+
+  Future<String> _loadUserId() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString(_userIdKey);
+      if (stored != null && stored.isNotEmpty) return stored;
+
+      final created = _newUserId();
+      await prefs.setString(_userIdKey, created);
+      return created;
+    } catch (_) {
+      // Storage unavailable: stay usable for this session rather than failing.
+      return _newUserId();
+    }
+  }
+
+  String _newUserId() {
+    final random = Random().nextInt(0xFFFFFF).toRadixString(16).padLeft(6, '0');
+    return 'user-${DateTime.now().millisecondsSinceEpoch}-$random';
   }
 
   Future<Map<String, dynamic>> healthCheck() async {
@@ -61,6 +102,49 @@ class ApiService {
       }
       throw ApiException('Could not scan antique', e);
     }
+  }
+
+  /// Starts a scan and returns as soon as the server has accepted it.
+  ///
+  /// Returns either `{status: 'processing', scan_id: ...}` to poll with
+  /// [getScanStatus], or a finished result when the server had to fall back to
+  /// the synchronous path.
+  Future<Map<String, dynamic>> startScan(String imagePath,
+      {String? additionalInfo}) async {
+    try {
+      final formData = FormData.fromMap({
+        'image': await MultipartFile.fromFile(imagePath),
+        'async': 'true',
+        if (additionalInfo != null) 'additionalInfo': additionalInfo,
+      });
+
+      final response = await _dio.post('/api/scan/antique', data: formData);
+      return response.data;
+    } catch (e) {
+      throw _scanException(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getScanStatus(dynamic scanId) async {
+    try {
+      final response = await _dio.get('/api/scan/$scanId/status');
+      return response.data;
+    } catch (e) {
+      throw _scanException(e);
+    }
+  }
+
+  ApiException _scanException(Object error) {
+    if (error is DioException && error.response?.data is Map<String, dynamic>) {
+      final data = error.response!.data as Map<String, dynamic>;
+      return ApiException(data['message'] ?? 'Could not scan antique', error);
+    }
+    if (error is DioException &&
+        (error.type == DioExceptionType.connectionTimeout ||
+            error.type == DioExceptionType.receiveTimeout)) {
+      return ApiException('The connection timed out. Please try again.', error);
+    }
+    return ApiException('Could not scan antique', error);
   }
 
   Future<Map<String, dynamic>> getHistory({int limit = 20, int offset = 0}) async {
