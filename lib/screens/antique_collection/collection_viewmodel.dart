@@ -5,12 +5,18 @@ import '../../models/antique_model.dart';
 import '../../services/collection_service.dart';
 import '../antique_solution_screen.dart';
 
-class CollectionViewModel extends ChangeNotifier {
+enum CollectionValueFilter { all, valued, needsReview }
 
+enum CollectionSort { newest, oldest, highestValue, alphabetical }
+
+class CollectionViewModel extends ChangeNotifier {
   Map<String, List<AntiqueModel>> _collections = {};
   bool _isLoading = false;
   String? _error;
   String? _selectedCollection;
+  String _searchQuery = '';
+  CollectionValueFilter _valueFilter = CollectionValueFilter.all;
+  CollectionSort _sort = CollectionSort.newest;
 
   Map<String, List<AntiqueModel>> get collections => _collections;
   bool get isLoading => _isLoading;
@@ -18,6 +24,12 @@ class CollectionViewModel extends ChangeNotifier {
   bool get hasError => _error != null;
   bool get isEmpty => _collections.isEmpty && !_isLoading && !hasError;
   String? get selectedCollection => _selectedCollection;
+  String get searchQuery => _searchQuery;
+  CollectionValueFilter get valueFilter => _valueFilter;
+  CollectionSort get sort => _sort;
+  bool get hasActiveFilters =>
+      _searchQuery.trim().isNotEmpty ||
+      _valueFilter != CollectionValueFilter.all;
 
   List<String> get collectionNames => _collections.keys.toList();
 
@@ -30,6 +42,155 @@ class CollectionViewModel extends ChangeNotifier {
     }
     return {};
   }
+
+  Map<String, List<AntiqueModel>> get visibleCollections {
+    final result = <String, List<AntiqueModel>>{};
+    for (final entry in filteredCollections.entries) {
+      final items =
+          entry.value.where(_matchesSearch).where(_matchesValueFilter).toList()
+            ..sort(_compareItems);
+      if (items.isNotEmpty) {
+        result[entry.key] = items;
+      }
+    }
+    return result;
+  }
+
+  void setSearchQuery(String value) {
+    final normalized = value.trimLeft();
+    if (_searchQuery == normalized) return;
+    _searchQuery = normalized;
+    notifyListeners();
+  }
+
+  void setValueFilter(CollectionValueFilter filter) {
+    if (_valueFilter == filter) return;
+    _valueFilter = filter;
+    notifyListeners();
+  }
+
+  void setSort(CollectionSort sort) {
+    if (_sort == sort) return;
+    _sort = sort;
+    notifyListeners();
+  }
+
+  void clearFilters() {
+    if (_searchQuery.isEmpty &&
+        _valueFilter == CollectionValueFilter.all &&
+        _sort == CollectionSort.newest) {
+      return;
+    }
+    _searchQuery = '';
+    _valueFilter = CollectionValueFilter.all;
+    _sort = CollectionSort.newest;
+    notifyListeners();
+  }
+
+  bool _matchesSearch(AntiqueModel antique) {
+    final query = _searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return true;
+
+    final searchable = [
+      antique.name,
+      antique.description,
+      antique.era,
+      antique.origin,
+      antique.price,
+    ].join(' ').toLowerCase();
+    return searchable.contains(query);
+  }
+
+  bool _matchesValueFilter(AntiqueModel antique) {
+    switch (_valueFilter) {
+      case CollectionValueFilter.all:
+        return true;
+      case CollectionValueFilter.valued:
+        return _hasEstimatedValue(antique.price);
+      case CollectionValueFilter.needsReview:
+        return !_hasEstimatedValue(antique.price);
+    }
+  }
+
+  int _compareItems(AntiqueModel first, AntiqueModel second) {
+    switch (_sort) {
+      case CollectionSort.newest:
+        return _timestamp(second.id).compareTo(_timestamp(first.id));
+      case CollectionSort.oldest:
+        return _timestamp(first.id).compareTo(_timestamp(second.id));
+      case CollectionSort.highestValue:
+        return _numericValue(
+          second.price,
+        ).compareTo(_numericValue(first.price));
+      case CollectionSort.alphabetical:
+        return first.name.toLowerCase().compareTo(second.name.toLowerCase());
+    }
+  }
+
+  bool _hasEstimatedValue(String price) {
+    final normalized = price.trim().toLowerCase();
+    if (normalized.isEmpty) return false;
+    const unavailableLabels = [
+      'not determined',
+      'unknown',
+      'unavailable',
+      'n/a',
+      'none',
+      'null',
+    ];
+    if (unavailableLabels.any(normalized.contains)) return false;
+    return RegExp(r'\d').hasMatch(normalized);
+  }
+
+  double _numericValue(String price) {
+    final normalized = price.replaceAll(',', '').toLowerCase();
+    final match = RegExp(r'(\d+(?:\.\d+)?)\s*([km])?').firstMatch(normalized);
+    if (match == null) return 0;
+    final value = double.tryParse(match.group(1)!) ?? 0;
+    switch (match.group(2)) {
+      case 'k':
+        return value * 1000;
+      case 'm':
+        return value * 1000000;
+      default:
+        return value;
+    }
+  }
+
+  /// What everything currently listed is estimated to be worth.
+  ///
+  /// Deliberately conservative: a price given as a range contributes its low
+  /// end (that is the first number [_numericValue] finds), and a piece with no
+  /// figure at all contributes nothing rather than a guess.
+  double get visibleEstimatedTotal {
+    var total = 0.0;
+    for (final items in visibleCollections.values) {
+      for (final item in items) {
+        if (_hasEstimatedValue(item.price)) {
+          total += _numericValue(item.price);
+        }
+      }
+    }
+    return total;
+  }
+
+  /// Null when nothing on screen carries a figure, so the header can leave the
+  /// line out rather than announce that a collection is worth nothing.
+  String? get visibleEstimatedTotalLabel {
+    final total = visibleEstimatedTotal;
+    if (total <= 0) return null;
+    if (total >= 1000000) {
+      final millions = total / 1000000;
+      return '\$${millions.toStringAsFixed(millions >= 10 ? 0 : 1)}M';
+    }
+    if (total >= 1000) {
+      final thousands = total / 1000;
+      return '\$${thousands.toStringAsFixed(thousands >= 10 ? 0 : 1)}K';
+    }
+    return '\$${total.toStringAsFixed(0)}';
+  }
+
+  int _timestamp(String id) => int.tryParse(id) ?? 0;
 
   Future<void> loadCollection({bool forceRefresh = false}) async {
     if (_isLoading && !forceRefresh) return;
@@ -75,7 +236,8 @@ class CollectionViewModel extends ChangeNotifier {
       debugPrint('User ID: $userId');
       debugPrint('Collection Key: $userCollectionKey');
 
-      List<String> savedCollection = prefs.getStringList(userCollectionKey) ?? [];
+      List<String> savedCollection =
+          prefs.getStringList(userCollectionKey) ?? [];
       debugPrint('Total saved items: ${savedCollection.length}');
 
       Map<String, dynamic>? itemData;
@@ -90,8 +252,11 @@ class CollectionViewModel extends ChangeNotifier {
       }
 
       if (itemData != null && itemData['original_analysis'] != null) {
-        final analysisResult = itemData['original_analysis'] as Map<String, dynamic>;
+        final analysisResult =
+            itemData['original_analysis'] as Map<String, dynamic>;
         debugPrint('Analysis result found, navigating...');
+
+        if (!context.mounted) return;
 
         // Solution screen'e navigate et
         Navigator.push(
@@ -145,10 +310,7 @@ class CollectionViewModel extends ChangeNotifier {
                   controller: controller,
                   decoration: InputDecoration(
                     hintText: 'Collection Name...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 16,
-                    ),
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
                     border: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
@@ -156,10 +318,7 @@ class CollectionViewModel extends ChangeNotifier {
                       borderSide: BorderSide(color: Color(0xFF8B4513)),
                     ),
                   ),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF2D1810),
-                  ),
+                  style: TextStyle(fontSize: 16, color: Color(0xFF2D1810)),
                   autofocus: true,
                 ),
                 SizedBox(height: 24),
@@ -185,14 +344,19 @@ class CollectionViewModel extends ChangeNotifier {
                         onPressed: () async {
                           if (controller.text.trim().isNotEmpty) {
                             try {
-                              await CollectionService().createEmptyCollection(controller.text.trim());
+                              await CollectionService().createEmptyCollection(
+                                controller.text.trim(),
+                              );
                               await loadCollection(); // Refresh collections
+                              if (!context.mounted) return;
                               Navigator.pop(context);
 
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Collection "${controller.text.trim()}" created!'),
+                                    content: Text(
+                                      'Collection "${controller.text.trim()}" created!',
+                                    ),
                                     backgroundColor: Color(0xFF8B4513),
                                     duration: Duration(seconds: 2),
                                   ),
@@ -202,7 +366,9 @@ class CollectionViewModel extends ChangeNotifier {
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text('Failed to create collection: ${e.toString()}'),
+                                    content: Text(
+                                      'Failed to create collection: ${e.toString()}',
+                                    ),
                                     backgroundColor: Colors.red,
                                     duration: Duration(seconds: 3),
                                   ),
@@ -246,8 +412,7 @@ class CollectionViewModel extends ChangeNotifier {
       _error = 'Error renaming collection';
       debugPrint('Error renaming collection: $e');
       notifyListeners();
-      throw e;
+      rethrow;
     }
   }
-
 }

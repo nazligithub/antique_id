@@ -93,11 +93,7 @@ class _HomeViewState extends State<HomeView> {
           onPressed: () {
             Navigator.pushNamed(context, AppRoutes.settings);
           },
-          icon: Icon(
-            Icons.settings,
-            color: AppColors.primary,
-            size: 24.sp,
-          ),
+          icon: Icon(Icons.settings, color: AppColors.primary, size: 24.sp),
         ),
       ],
     );
@@ -108,114 +104,84 @@ class _HomeViewState extends State<HomeView> {
       builder: (context, appProvider, child) {
         if (appProvider.isPremiumUser) {
           // Premium user card
+          //
+          // Dark with gold rather than gold on gold: a bright gradient with
+          // white text on it read as a promotion, which is the opposite of
+          // what a subscriber should see. The state is a quiet confirmation.
           return GestureDetector(
             onTap: () => viewModel.onPremiumCardTapped(context),
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
-              constraints: BoxConstraints(minHeight: 120.h),
+              padding: EdgeInsets.fromLTRB(16.w, 16.h, 12.w, 16.h),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFFD4AF37), Color(0xFFC19A6B)],
+                  colors: [Color(0xFF3E2723), Color(0xFF5D4037)],
                 ),
                 borderRadius: BorderRadius.circular(AppSizes.radiusL),
+                border: Border.all(
+                  color: AppColors.premiumGold.withValues(alpha: 0.42),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.black.withValues(alpha: 0.2),
-                    blurRadius: 10.r,
-                    offset: Offset(0, 5.h),
+                    color: const Color(0xFF3E2723).withValues(alpha: 0.34),
+                    blurRadius: 18.r,
+                    offset: Offset(0, 8.h),
                   ),
                 ],
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.all(AppSizes.paddingM),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.star,
-                                      color: AppColors.white,
-                                      size: 20.sp,
-                                    ),
-                                    SizedBox(width: AppSizes.paddingXS),
-                                    Flexible(
-                                      child: Text(
-                                        'Premium Active',
-                                        style: AppTextStyles.h3.copyWith(
-                                          color: AppColors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: AppSizes.paddingXS),
-                                Text(
-                                  'Enjoy unlimited scans and AI chat!',
-                                  style: AppTextStyles.body2.copyWith(
-                                    color: AppColors.white.withValues(alpha: 0.9),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppSizes.paddingM,
-                              vertical: AppSizes.paddingXS,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(AppSizes.radiusS),
-                              border: Border.all(
-                                color: AppColors.white,
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              'Tap to see features',
-                              style: AppTextStyles.button.copyWith(
-                                color: AppColors.white,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                  Container(
+                    width: 46.w,
+                    height: 46.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.premiumGold.withValues(alpha: 0.15),
+                      border: Border.all(
+                        color: AppColors.premiumGold.withValues(alpha: 0.55),
                       ),
+                    ),
+                    child: Icon(
+                      Icons.workspace_premium_outlined,
+                      color: AppColors.premiumGold,
+                      size: 23.sp,
                     ),
                   ),
-                  Container(
-                    width: 100.w,
-                    height: 100.h,
-                    margin: EdgeInsets.only(right: AppSizes.paddingM),
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/antique_pro.png'),
-                        fit: BoxFit.contain,
-                      ),
+                  SizedBox(width: 14.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'PREMIUM ACTIVE',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.premiumGold,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.4,
+                            fontSize: 10.sp,
+                          ),
+                        ),
+                        SizedBox(height: 5.h),
+                        Text(
+                          'Unlimited scans, full reports and expert chat',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.body2.copyWith(
+                            color: AppColors.white.withValues(alpha: 0.88),
+                            fontSize: 13.sp,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
                     ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    color: AppColors.premiumGold.withValues(alpha: 0.8),
+                    size: 22.sp,
                   ),
                 ],
               ),
@@ -271,7 +237,9 @@ class _HomeViewState extends State<HomeView> {
                                 Text(
                                   AppStrings.unlockFeatures,
                                   style: AppTextStyles.body2.copyWith(
-                                    color: AppColors.white.withValues(alpha: 0.9),
+                                    color: AppColors.white.withValues(
+                                      alpha: 0.9,
+                                    ),
                                     fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 2,
@@ -287,7 +255,9 @@ class _HomeViewState extends State<HomeView> {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.white,
-                              borderRadius: BorderRadius.circular(AppSizes.radiusS),
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusS,
+                              ),
                             ),
                             child: Text(
                               AppStrings.upgradeNow,
@@ -325,7 +295,10 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildScanIdentifierCard(BuildContext context, HomeViewModel viewModel) {
+  Widget _buildScanIdentifierCard(
+    BuildContext context,
+    HomeViewModel viewModel,
+  ) {
     return GestureDetector(
       onTap: () => viewModel.onScanAntiqueIdentifierTapped(context),
       child: Container(
@@ -449,7 +422,10 @@ class _HomeViewState extends State<HomeView> {
             itemBuilder: (context, index) {
               return _buildQuestionCard(
                 viewModel.popularQuestions[index],
-                () => viewModel.onQuestionTapped(context, viewModel.popularQuestions[index]),
+                () => viewModel.onQuestionTapped(
+                  context,
+                  viewModel.popularQuestions[index],
+                ),
               );
             },
           ),
@@ -566,7 +542,9 @@ class _HomeViewState extends State<HomeView> {
                 return Container(
                   width: 200.w,
                   margin: EdgeInsets.only(
-                    right: index == viewModel.featuredAntiques.length - 1 ? 0 : AppSizes.paddingM,
+                    right: index == viewModel.featuredAntiques.length - 1
+                        ? 0
+                        : AppSizes.paddingM,
                   ),
                   child: _buildAntiqueCard(
                     context,
@@ -640,52 +618,52 @@ class _HomeViewState extends State<HomeView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        antique.name,
-                        style: AppTextStyles.body1.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: AppSizes.paddingXS),
-                      Text(
-                        antique.description,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          antique.price,
-                          style: AppTextStyles.body2.copyWith(
-                            color: AppColors.primary,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          antique.name,
+                          style: AppTextStyles.body1.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 12.sp,
+                            color: AppColors.textPrimary,
                           ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Text(
-                        antique.era,
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.textSecondary,
+                        SizedBox(height: AppSizes.paddingXS),
+                        Text(
+                          antique.description,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            antique.price,
+                            style: AppTextStyles.body2.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12.sp,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          antique.era,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),

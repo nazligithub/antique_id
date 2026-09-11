@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
 import '../helpers/appactor_helper.dart';
 import '../providers/app_provider.dart';
+import 'antique_premium/premium_entry_view.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -25,10 +26,45 @@ class SettingsScreen extends StatelessWidget {
                   padding: EdgeInsets.all(20.w),
                   child: Column(
                     children: [
-                      _buildAboutSection(context),
+                      _buildUpgradeCard(context),
                       SizedBox(height: 24.h),
-                      _buildMenuItems(context),
-                      SizedBox(height: 40.h),
+                      _buildSection('LEGAL', [
+                        _buildMenuItem(
+                          icon: Icons.description_outlined,
+                          title: 'Terms of Service',
+                          isFirst: true,
+                          onTap: () => _launchUrl(
+                            'https://mobinaz.com/terms-antique-identifier',
+                          ),
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: Icons.privacy_tip_outlined,
+                          title: 'Privacy Policy',
+                          isLast: true,
+                          onTap: () => _launchUrl(
+                            'https://mobinaz.com/privacy-antique-identifier',
+                          ),
+                        ),
+                      ]),
+                      SizedBox(height: 18.h),
+                      _buildSection('ACCOUNT', [
+                        _buildMenuItem(
+                          icon: Icons.support_agent_outlined,
+                          title: 'Support',
+                          isFirst: true,
+                          onTap: () =>
+                              _launchUrl('https://mobinaz.com/support'),
+                        ),
+                        _buildDivider(),
+                        _buildMenuItem(
+                          icon: Icons.restore_outlined,
+                          title: 'Restore Purchases',
+                          isLast: true,
+                          onTap: () => _showRestoreDialog(context),
+                        ),
+                      ]),
+                      SizedBox(height: 34.h),
                       _buildAppInfo(),
                     ],
                   ),
@@ -55,10 +91,7 @@ class SettingsScreen extends StatelessWidget {
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.arrow_back,
-                color: Color(0xFF8B4513),
-              ),
+              child: const Icon(Icons.arrow_back, color: Color(0xFF8B4513)),
             ),
           ),
           SizedBox(width: 16.w),
@@ -75,103 +108,150 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAboutSection(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(24.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 80.w,
-            height: 80.w,
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B4513).withOpacity(0.1),
-              shape: BoxShape.circle,
+  /// The subscription state, in the same dark-and-gold the home card uses.
+  /// It was green here and gold-on-gold there, so the one thing a subscriber
+  /// looks for said something different on each screen.
+  Widget _buildUpgradeCard(BuildContext context) {
+    return Consumer<AppProvider>(
+      builder: (context, appProvider, child) {
+        final isPremium = appProvider.isPremiumUser;
+
+        final card = Container(
+          padding: EdgeInsets.fromLTRB(16.w, 16.h, 14.w, 16.h),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF3E2723), Color(0xFF5D4037)],
             ),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/antique_float.png',
-                width: 60.w,
-                height: 60.w,
-                fit: BoxFit.cover,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: AppColors.premiumGold.withValues(alpha: 0.42),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF3E2723).withValues(alpha: 0.30),
+                blurRadius: 18,
+                offset: Offset(0, 8.h),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46.w,
+                height: 46.w,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.premiumGold.withValues(alpha: 0.15),
+                  border: Border.all(
+                    color: AppColors.premiumGold.withValues(alpha: 0.55),
+                  ),
+                ),
+                child: Icon(
+                  isPremium
+                      ? Icons.workspace_premium_outlined
+                      : Icons.lock_open_rounded,
+                  color: AppColors.premiumGold,
+                  size: 23.sp,
+                ),
+              ),
+              SizedBox(width: 14.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isPremium ? 'PREMIUM ACTIVE' : 'UPGRADE TO PRO',
+                      style: GoogleFonts.lato(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.4,
+                        color: AppColors.premiumGold,
+                      ),
+                    ),
+                    SizedBox(height: 5.h),
+                    Text(
+                      isPremium
+                          ? 'Unlimited scans, full reports and expert chat'
+                          : 'Unlock unlimited scans and full valuations',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato(
+                        fontSize: 13.sp,
+                        height: 1.3,
+                        color: Colors.white.withValues(alpha: 0.88),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Only the upgrade state leads anywhere, so only it gets an arrow.
+              if (!isPremium)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.premiumGold.withValues(alpha: 0.85),
+                  size: 24.sp,
+                ),
+            ],
+          ),
+        );
+
+        if (isPremium) return card;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16.r),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const PremiumEntryView(fromOnboarding: false),
               ),
             ),
+            child: card,
           ),
-          SizedBox(height: 16.h),
-          Text(
-            'Antique Identifier',
-            style: GoogleFonts.playfairDisplay(
-              fontSize: 20.sp,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF2D1810),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            'Discover the history and value of your antiques with AI-powered identification',
-            style: GoogleFonts.lora(
-              fontSize: 14.sp,
-              color: const Color(0xFF6B5B73),
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildMenuItems(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  /// Two short groups under headings rather than one undifferentiated stack of
+  /// four rows, so the legal links and the things that act on the account are
+  /// visibly not the same kind of thing.
+  Widget _buildSection(String title, List<Widget> items) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: 4.w, bottom: 8.h),
+          child: Text(
+            title,
+            style: GoogleFonts.lato(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.3,
+              color: AppColors.textSecondary.withValues(alpha: 0.7),
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            icon: Icons.description_outlined,
-            title: 'Terms of Service',
-            onTap: () => _launchUrl('https://mobinaz.com/terms-antique-identifier'),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.78),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.13)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.textPrimary.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: Offset(0, 4.h),
+              ),
+            ],
           ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
-            onTap: () => _launchUrl('https://mobinaz.com/privacy-antique-identifier'),
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.support_agent_outlined,
-            title: 'Support',
-            onTap: () => _launchUrl('https://mobinaz.com/support'),
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.restore_outlined,
-            title: 'Restore Purchases',
-            onTap: () => _showRestoreDialog(context),
-          ),
-        ],
-      ),
+          child: Column(children: items),
+        ),
+      ],
     );
   }
 
@@ -179,44 +259,48 @@ class SettingsScreen extends StatelessWidget {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool isFirst = false,
+    bool isLast = false,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
-        child: Row(
-          children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: const Color(0xFF8B4513).withOpacity(0.1),
-                shape: BoxShape.circle,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(isFirst ? 16.r : 0),
+          bottom: Radius.circular(isLast ? 16.r : 0),
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
+          child: Row(
+            children: [
+              Container(
+                width: 34.w,
+                height: 34.w,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(10.r),
+                ),
+                child: Icon(icon, color: AppColors.primary, size: 18.sp),
               ),
-              child: Icon(
-                icon,
-                color: const Color(0xFF8B4513),
-                size: 20.sp,
-              ),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.lora(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF2D1810),
+              SizedBox(width: 13.w),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.lato(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: const Color(0xFF8B8B8B),
-              size: 16.sp,
-            ),
-          ],
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.primary.withValues(alpha: 0.45),
+                size: 20.sp,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -224,29 +308,36 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildDivider() {
     return Divider(
-      color: const Color(0xFFE0E0E0),
+      color: AppColors.primary.withValues(alpha: 0.11),
       height: 1.h,
-      indent: 76.w,
-      endIndent: 20.w,
+      indent: 61.w,
+      endIndent: 14.w,
     );
   }
 
   Widget _buildAppInfo() {
     return Column(
       children: [
+        Container(
+          width: 34.w,
+          height: 1.h,
+          color: AppColors.primary.withValues(alpha: 0.22),
+        ),
+        SizedBox(height: 14.h),
         Text(
-          'Version 1.0.0',
-          style: GoogleFonts.lora(
-            fontSize: 14.sp,
-            color: const Color(0xFF8B8B8B),
+          'Antique Id  ·  Version 1.2.0',
+          style: GoogleFonts.lato(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary.withValues(alpha: 0.75),
           ),
         ),
-        SizedBox(height: 8.h),
+        SizedBox(height: 5.h),
         Text(
-          '© 2024 Mobinaz. All rights reserved.',
-          style: GoogleFonts.lora(
-            fontSize: 12.sp,
-            color: const Color(0xFF8B8B8B),
+          '© ${DateTime.now().year} Mobinaz. All rights reserved.',
+          style: GoogleFonts.lato(
+            fontSize: 11.sp,
+            color: AppColors.textSecondary.withValues(alpha: 0.55),
           ),
         ),
       ],
@@ -261,13 +352,13 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showRestoreDialog(BuildContext context) {
+    var isLoading = false;
+
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (dialogContext) {
         return StatefulBuilder(
-          builder: (context, setState) {
-            bool isLoading = false;
-
+          builder: (dialogContext, setDialogState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.r),
@@ -290,7 +381,9 @@ class SettingsScreen extends StatelessWidget {
               ),
               actions: [
                 TextButton(
-                  onPressed: isLoading ? null : () => Navigator.pop(context),
+                  onPressed: isLoading
+                      ? null
+                      : () => Navigator.pop(dialogContext),
                   child: Text(
                     'Cancel',
                     style: GoogleFonts.lora(
@@ -300,61 +393,76 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: isLoading ? null : () async {
-                    setState(() {
-                      isLoading = true;
-                    });
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isLoading = true;
+                          });
 
-                    try {
-                      final customerInfo = await AppactorHelper.shared.restorePurchases();
+                          try {
+                            final customerInfo = await AppactorHelper.shared
+                                .restorePurchases();
 
-                      if (context.mounted) {
-                        Navigator.pop(context);
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
 
-                        if (customerInfo != null && AppactorHelper.shared.isActive) {
-                          // Update AppProvider
-                          final appProvider = Provider.of<AppProvider>(context, listen: false);
-                          await appProvider.refreshPremiumStatus();
+                              if (customerInfo != null &&
+                                  AppactorHelper.shared.isActive) {
+                                final appProvider = Provider.of<AppProvider>(
+                                  context,
+                                  listen: false,
+                                );
+                                await appProvider.refreshPremiumStatus();
+                                if (!context.mounted) return;
 
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Purchases restored successfully! Premium features unlocked.',
-                                style: GoogleFonts.lora(color: Colors.white),
-                              ),
-                              backgroundColor: Colors.green,
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'No previous purchases found for this account.',
-                                style: GoogleFonts.lora(color: Colors.white),
-                              ),
-                              backgroundColor: const Color(0xFF8B4513),
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        }
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Failed to restore purchases. Please try again.',
-                              style: GoogleFonts.lora(color: Colors.white),
-                            ),
-                            backgroundColor: Colors.red,
-                            duration: const Duration(seconds: 3),
-                          ),
-                        );
-                      }
-                    }
-                  },
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Purchases restored successfully! Premium features unlocked.',
+                                      style: GoogleFonts.lora(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    backgroundColor: Colors.green,
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'No previous purchases found for this account.',
+                                      style: GoogleFonts.lora(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    backgroundColor: const Color(0xFF8B4513),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext);
+                            }
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Failed to restore purchases. Please try again.',
+                                    style: GoogleFonts.lora(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.red,
+                                  duration: const Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B4513),
                     shape: RoundedRectangleBorder(

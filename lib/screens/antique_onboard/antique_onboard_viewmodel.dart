@@ -10,33 +10,52 @@ class AntiqueOnboardViewModel extends ChangeNotifier {
   VideoPlayerController? identifyVideoController;
 
   int get currentPage => _currentPage;
-  int get totalPages => 2;
+  int get totalPages => _pages.length;
+
+  OnboardPage pageAt(int index) => _pages[index.clamp(0, _pages.length - 1)];
 
   String get buttonTitle {
     return _currentPage < totalPages - 1 ? 'Continue' : 'Start Collecting';
   }
 
-  String getTitleForPage(int index) {
-    switch (index) {
-      case 0:
-        return 'Scan & Discover';
-      case 1:
-        return 'Build Your Collection';
-      default:
-        return 'Scan & Discover';
-    }
-  }
+  String getTitleForPage(int index) => pageAt(index).title;
 
-  String getSubtitleForPage(int index) {
-    switch (index) {
-      case 0:
-        return 'Point your camera at any antique and get instant identification with detailed history';
-      case 1:
-        return 'Save your discoveries and build your personal antique collection with expert valuations';
-      default:
-        return 'Point your camera at any antique and get instant identification with detailed history';
-    }
-  }
+  String getSubtitleForPage(int index) => pageAt(index).subtitle;
+
+  /// Four steps that walk through what actually happens to a photo, in the
+  /// order it happens. The two middle ones are drawn rather than filmed --
+  /// they show the report and the market comparison, which is the part a
+  /// reader cannot guess at from a video of someone holding up a camera.
+  static const List<OnboardPage> _pages = [
+    OnboardPage(
+      media: OnboardMedia.scanVideo,
+      title: 'Discover Hidden Value',
+      subtitle:
+          'Photograph any antique and get an expert read on what it is, where '
+          'it came from, and what it is worth',
+    ),
+    OnboardPage(
+      media: OnboardMedia.identification,
+      title: 'Know What You Are Holding',
+      subtitle:
+          'Period, origin, materials, condition and authenticity, all assessed '
+          'from a single photo',
+    ),
+    OnboardPage(
+      media: OnboardMedia.marketPrices,
+      title: 'See What Similar Pieces Sell For',
+      subtitle:
+          'We search live marketplace listings, so you can weigh the estimate '
+          'against what the market is actually asking',
+    ),
+    OnboardPage(
+      media: OnboardMedia.collectionVideo,
+      title: 'Build Your Collection',
+      subtitle:
+          'Keep every find in one place, with its valuation, history and care '
+          'notes',
+    ),
+  ];
 
   void initializeVideos() async {
     try {
@@ -64,10 +83,13 @@ class AntiqueOnboardViewModel extends ChangeNotifier {
       identifyVideoController!.initialize().then((_) {
         identifyVideoController!.setLooping(true);
         identifyVideoController!.setVolume(0.0);
-        // Pre-buffer by playing briefly
+        // Warm the decoder so the video appears the instant its page does,
+        // then settle to whatever page the reader is actually on -- they may
+        // already have walked past it while this was still loading.
         identifyVideoController!.play().then((_) {
           Future.delayed(const Duration(milliseconds: 50), () {
-            identifyVideoController!.pause();
+            _syncVideoPlayback();
+            notifyListeners();
           });
         });
       });
@@ -78,26 +100,27 @@ class AntiqueOnboardViewModel extends ChangeNotifier {
 
   void onPageChanged(int page) {
     _currentPage = page;
-
-    // Play target video immediately for instant transition
-    switch (page) {
-      case 0:
-        if (scanVideoController != null &&
-            scanVideoController!.value.isInitialized) {
-          scanVideoController!.play();
-          identifyVideoController?.pause();
-        }
-        break;
-      case 1:
-        if (identifyVideoController != null &&
-            identifyVideoController!.value.isInitialized) {
-          identifyVideoController!.play();
-          scanVideoController?.pause();
-        }
-        break;
-    }
-
+    _syncVideoPlayback();
     notifyListeners();
+  }
+
+  /// Plays whichever video the current page shows and pauses the other.
+  /// Driven by the page's media rather than its index: the drawn pages sit
+  /// between the filmed ones, so an index-based switch left the collection
+  /// video playing off-screen and never started it on the page that shows it.
+  void _syncVideoPlayback() {
+    final media = pageAt(_currentPage).media;
+
+    _setPlaying(scanVideoController, media == OnboardMedia.scanVideo);
+    _setPlaying(
+      identifyVideoController,
+      media == OnboardMedia.collectionVideo,
+    );
+  }
+
+  void _setPlaying(VideoPlayerController? controller, bool shouldPlay) {
+    if (controller == null || !controller.value.isInitialized) return;
+    shouldPlay ? controller.play() : controller.pause();
   }
 
   void onContinue() {
@@ -129,4 +152,17 @@ class AntiqueOnboardViewModel extends ChangeNotifier {
     identifyVideoController?.dispose();
     super.dispose();
   }
+}
+enum OnboardMedia { scanVideo, identification, marketPrices, collectionVideo }
+
+class OnboardPage {
+  final OnboardMedia media;
+  final String title;
+  final String subtitle;
+
+  const OnboardPage({
+    required this.media,
+    required this.title,
+    required this.subtitle,
+  });
 }

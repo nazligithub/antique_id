@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/antique_model.dart';
 import '../../providers/app_provider.dart';
-import '../antique_premium/antique_premium_view.dart';
+import '../antique_premium/premium_entry_view.dart';
 import '../antique_chat_screen.dart';
 import '../antique_explore_detail.dart';
 import '../antique_scan/scan_view.dart';
@@ -94,7 +94,7 @@ class HomeViewModel extends ChangeNotifier {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const AntiquePremiumView(fromOnboarding: false),
+          builder: (context) => const PremiumEntryView(fromOnboarding: false),
         ),
       );
     }
@@ -158,8 +158,6 @@ class HomeViewModel extends ChangeNotifier {
                 _buildFeatureItem('🔍', 'Advanced AI Recognition'),
                 const SizedBox(height: 8),
                 _buildFeatureItem('🏛️', 'Premium Collections'),
-                const SizedBox(height: 8),
-                _buildFeatureItem('🤖', 'AI Chat Expert'),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
@@ -212,12 +210,7 @@ class HomeViewModel extends ChangeNotifier {
 
   void onScanAntiqueIdentifierTapped(BuildContext context) {
     debugPrint('Scan Antique Identifier tapped');
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ScanView(),
-      ),
-    );
+    ScanSheet.open(context);
   }
 
   void onQuestionTapped(BuildContext context, String question) {
@@ -230,7 +223,7 @@ class HomeViewModel extends ChangeNotifier {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const AntiquePremiumView(fromOnboarding: false),
+          builder: (context) => const PremiumEntryView(fromOnboarding: false),
         ),
       );
       return;
@@ -254,7 +247,7 @@ class HomeViewModel extends ChangeNotifier {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const AntiquePremiumView(fromOnboarding: false),
+          builder: (context) => const PremiumEntryView(fromOnboarding: false),
         ),
       );
       return;

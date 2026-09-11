@@ -107,14 +107,7 @@ class _MainTabViewState extends State<MainTabView> {
       width: 70.w,
       height: 70.h,
       child: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const ScanView(),
-            ),
-          );
-        },
+        onPressed: () => ScanSheet.open(context),
         backgroundColor: Colors.transparent,
         elevation: 0,
         shape: const CircleBorder(),

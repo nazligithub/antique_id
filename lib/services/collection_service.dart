@@ -6,6 +6,8 @@ import '../models/antique_model.dart';
 
 class CollectionService {
   static const String _collectionKey = 'saved_collection';
+  static const String _userIdKey = 'collection_user_id';
+  static const String _guestPrefix = 'guest_user_';
 
   String _extractPrice(Map<String, dynamic> data) {
     // Önce analysis_data içindeki reference_price'ı kontrol et
@@ -38,14 +40,84 @@ class CollectionService {
     return 'Value not determined';
   }
 
+  /// A stable identity for the on-device collection.
+  ///
+  /// Every collection read and write is keyed on this. The previous version
+  /// minted `guest_user_<timestamp>` whenever AppActor was slow or offline,
+  /// which meant a single hiccup wrote items under an id that would never be
+  /// produced again: the collection came back empty and the entries were
+  /// stranded for good. The resolved id is now persisted, and anything left
+  /// under an earlier guest id is folded back in.
   Future<String> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getString(_userIdKey);
+
+    String? resolved;
     try {
-      final customerInfo = await AppActor.instance.getCustomerInfo();
-      return customerInfo.appUserId ?? 'guest_user_${DateTime.now().millisecondsSinceEpoch}';
+      final appUserId = (await AppActor.instance.getCustomerInfo()).appUserId;
+      if (appUserId != null && appUserId.isNotEmpty) resolved = appUserId;
     } catch (e) {
       debugPrint('Error getting user ID: $e');
-      return 'guest_user_${DateTime.now().millisecondsSinceEpoch}';
     }
+
+    // Falling back to the last known id -- rather than a fresh one -- is the
+    // whole point: an unreachable AppActor must not cost anyone their items.
+    resolved ??= stored;
+    resolved ??= '$_guestPrefix${DateTime.now().millisecondsSinceEpoch}';
+
+    if (resolved != stored) {
+      await prefs.setString(_userIdKey, resolved);
+      await _adoptStrandedCollections(prefs, resolved);
+    }
+    return resolved;
+  }
+
+  /// Moves anything saved under a previous guest id into the current one.
+  ///
+  /// Only guest keys are adopted. A real AppActor id belongs to a specific
+  /// person, and merging two of those would hand one reader another's items.
+  Future<void> _adoptStrandedCollections(
+    SharedPreferences prefs,
+    String userId,
+  ) async {
+    final currentKey = '${_collectionKey}_$userId';
+    final stranded = prefs
+        .getKeys()
+        .where(
+          (key) =>
+              key.startsWith('${_collectionKey}_$_guestPrefix') &&
+              key != currentKey,
+        )
+        .toList();
+    if (stranded.isEmpty) return;
+
+    final merged = prefs.getStringList(currentKey) ?? <String>[];
+    final seen = merged.map(_entryId).whereType<String>().toSet();
+
+    for (final key in stranded) {
+      for (final entry in prefs.getStringList(key) ?? const <String>[]) {
+        final id = _entryId(entry);
+        if (id != null && !seen.add(id)) continue;
+        merged.add(entry);
+      }
+      await prefs.remove(key);
+    }
+
+    await prefs.setStringList(currentKey, merged);
+    debugPrint(
+      'Collection: recovered ${stranded.length} stranded key(s) into $currentKey',
+    );
+  }
+
+  String? _entryId(String entry) {
+    try {
+      final decoded = jsonDecode(entry);
+      if (decoded is Map<String, dynamic>) return decoded['id']?.toString();
+    } catch (_) {
+      // A malformed entry keeps its place in the list; it just cannot be
+      // matched for duplicates.
+    }
+    return null;
   }
 
   Future<void> saveToCollection(

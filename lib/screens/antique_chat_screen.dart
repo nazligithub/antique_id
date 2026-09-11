@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
 import '../services/api_service.dart';
 import '../providers/app_provider.dart';
-import 'antique_premium/antique_premium_view.dart';
+import 'antique_premium/premium_entry_view.dart';
 
 class AntiqueChatScreen extends StatefulWidget {
   final String? initialMessage;
@@ -67,7 +67,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const AntiquePremiumView(fromOnboarding: false),
+          builder: (context) => const PremiumEntryView(fromOnboarding: false),
         ),
       );
       return;
@@ -367,7 +367,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
                 ),
               ),
               child: message.isHtml && !message.isUser
-                  ? Container(
+                  ? SizedBox(
                       height: 200.h, // HTML content için sabit yükseklik
                       child: WebViewWidget(
                         controller: WebViewController()
@@ -466,7 +466,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),

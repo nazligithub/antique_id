@@ -295,7 +295,7 @@ class _CollectionSelectionBottomSheetState
                               width: 40.w,
                               height: 40.w,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF8B4513).withOpacity(0.1),
+                                color: const Color(0xFF8B4513).withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

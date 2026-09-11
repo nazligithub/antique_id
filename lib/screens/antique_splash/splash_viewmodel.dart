@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../helpers/storage_helper.dart';
 import '../../helpers/appactor_helper.dart';
+import '../../helpers/version_check_helper.dart';
 import '../../providers/app_provider.dart';
 
 class SplashViewModel extends ChangeNotifier {
@@ -10,6 +12,15 @@ class SplashViewModel extends ChangeNotifier {
 
   Future<void> initialize(BuildContext context) async {
     await _storageHelper.init();
+
+    // A newer store version blocks the splash behind the Update alert. A
+    // failed lookup returns null and simply falls through, so being offline
+    // never locks anyone out.
+    final storeInfo = await VersionCheck.storeInfo();
+    if (storeInfo?.updateAvailable == true && context.mounted) {
+      await _showHardUpdateDialog(context, storeInfo!);
+      return;
+    }
 
     // Load Appactor offerings and check subscription status
     try {
@@ -27,9 +38,58 @@ class SplashViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _showHardUpdateDialog(
+    BuildContext context,
+    StoreInfo storeInfo,
+  ) async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            backgroundColor: const Color(0xFFFAF5ED),
+            title: Text(
+              'Update Antique Identifier',
+              style: const TextStyle(
+                color: Color(0xFF3E2723),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            content: Text(
+              'Version ${storeInfo.storeVersion} is available. '
+              'You have ${storeInfo.currentVersion}. Please update to continue.',
+              style: const TextStyle(color: Color(0xFF6D4C41)),
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () async {
+                  if (await canLaunchUrl(storeInfo.appStoreUrl)) {
+                    await launchUrl(
+                      storeInfo.appStoreUrl,
+                      mode: LaunchMode.externalApplication,
+                    );
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B6F47),
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Update now'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void checkNavigation(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
-    final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+    final bool onboardingCompleted =
+        prefs.getBool('onboarding_completed') ?? false;
+    if (!context.mounted) return;
     final appProvider = Provider.of<AppProvider>(context, listen: false);
 
     // Load user preferences and sync with Appactor
@@ -38,7 +98,9 @@ class SplashViewModel extends ChangeNotifier {
     // Extra sync to ensure premium status is up-to-date
     await appProvider.syncPurchases();
 
-    debugPrint('Navigation check - Onboarding: $onboardingCompleted, Premium: ${appProvider.isPremiumUser}');
+    debugPrint(
+      'Navigation check - Onboarding: $onboardingCompleted, Premium: ${appProvider.isPremiumUser}',
+    );
 
     if (context.mounted) {
       if (!onboardingCompleted) {

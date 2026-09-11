@@ -37,8 +37,8 @@ class _SplashViewState extends State<SplashView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                width: 160.w,
-                height: 160.h,
+                width: 120.w,
+                height: 120.h,
                 child: Image.asset(
                   'assets/antique_float.png',
                   fit: BoxFit.contain,
@@ -47,9 +47,7 @@ class _SplashViewState extends State<SplashView> {
               SizedBox(height: AppSizes.paddingL),
               Text(
                 AppStrings.appName,
-                style: AppTextStyles.h1.copyWith(
-                  color: AppColors.primary,
-                ),
+                style: AppTextStyles.h1.copyWith(color: AppColors.primary),
               ),
               SizedBox(height: AppSizes.paddingM),
               Text(

@@ -25,46 +25,46 @@ class AppTextStyles {
   static TextStyle get playfair => GoogleFonts.playfairDisplay();
 
   static TextStyle get h1 => playfair.copyWith(
-        fontSize: 32.sp,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 32.sp,
+    fontWeight: FontWeight.bold,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get h2 => playfair.copyWith(
-        fontSize: 24.sp,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 24.sp,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get h3 => playfair.copyWith(
-        fontSize: 20.sp,
-        fontWeight: FontWeight.w500,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 20.sp,
+    fontWeight: FontWeight.w500,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get body1 => playfair.copyWith(
-        fontSize: 16.sp,
-        fontWeight: FontWeight.normal,
-        color: AppColors.textPrimary,
-      );
+    fontSize: 16.sp,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textPrimary,
+  );
 
   static TextStyle get body2 => playfair.copyWith(
-        fontSize: 14.sp,
-        fontWeight: FontWeight.normal,
-        color: AppColors.textSecondary,
-      );
+    fontSize: 14.sp,
+    fontWeight: FontWeight.normal,
+    color: AppColors.textSecondary,
+  );
 
   static TextStyle get caption => playfair.copyWith(
-        fontSize: 12.sp,
-        fontWeight: FontWeight.normal,
-        color: AppColors.grey,
-      );
+    fontSize: 12.sp,
+    fontWeight: FontWeight.normal,
+    color: AppColors.grey,
+  );
 
   static TextStyle get button => playfair.copyWith(
-        fontSize: 16.sp,
-        fontWeight: FontWeight.w600,
-        color: AppColors.white,
-      );
+    fontSize: 16.sp,
+    fontWeight: FontWeight.w600,
+    color: AppColors.white,
+  );
 }
 
 class AppRoutes {
@@ -121,7 +121,8 @@ class AppSizes {
 }
 
 class AppImages {
-  static const String antiqueBackground = 'assets/background/antique_background.png';
+  static const String antiqueBackground =
+      'assets/background/antique_background.png';
 }
 
 class AppDecorations {

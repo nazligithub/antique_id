@@ -97,11 +97,16 @@ class AntiqueAnalysis {
     'object_name',
   ], fallback: 'Unknown antique');
 
+  /// The report's prose. The analysis returns this as historical_background;
+  /// looking only for 'description' left every report saying it had none.
   String get description => _text([
     'description',
     'summary',
+    'historical_background',
     'historical_context',
     'history',
+    'cultural_context',
+    'cultural_impact',
   ], fallback: 'No description available yet.');
 
   String get period =>
@@ -116,7 +121,43 @@ class AntiqueAnalysis {
 
   String get condition => _text(['condition', 'grading', 'grade']);
 
-  String get rarity => _text(['rarity', 'rarity_level', 'scarcity']);
+  /// Rarity arrives as a 1-10 score, not a word, so a text-only lookup always
+  /// came back empty and the tile read "Not available" on every scan.
+  String get rarity {
+    final score = _read(['rarity_score', 'rarityScore']);
+    final parsed = score is num
+        ? score.round()
+        : int.tryParse(score?.toString().trim() ?? '');
+    if (parsed != null) return '$parsed/10';
+
+    return _text(['rarity', 'rarity_level', 'scarcity']);
+  }
+
+  /// The band around the headline figure. The analysis has always returned it
+  /// and the report has never shown it, which left a single number standing
+  /// for a range the model itself would not commit to.
+  String? get priceRange {
+    final range = _text(['price_range', 'priceRange', 'value_range'],
+        fallback: '');
+    if (range.isEmpty || range.startsWith(r'$0')) return null;
+    return range;
+  }
+
+  /// High, Medium or Low, as returned. Shown because a valuation the model is
+  /// unsure of should not look the same as one it is confident about.
+  String? get authenticity {
+    final value = _text(
+      ['authenticity', 'authenticity_confidence', 'authenticityConfidence'],
+      fallback: '',
+    );
+    return value.isEmpty ? null : value;
+  }
+
+  String? get careTip {
+    final tip = _text(['care_tip', 'careTip', 'care_instructions'],
+        fallback: '');
+    return tip.isEmpty || tip == 'Handle with care' ? null : tip;
+  }
 
   String get valueLabel {
     final value = _read([

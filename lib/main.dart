@@ -14,12 +14,10 @@ import 'screens/antique_splash/splash_view.dart';
 import 'screens/antique_maintab/maintab_viewmodel.dart';
 import 'screens/antique_maintab/maintab_view.dart';
 import 'screens/antique_home/home_viewmodel.dart';
-import 'screens/antique_scan/scan_viewmodel.dart';
 import 'screens/antique_collection/collection_viewmodel.dart';
-import 'screens/antique_premium/antique_premium_view.dart';
+import 'screens/antique_premium/premium_entry_view.dart';
 import 'screens/antique_onboard/antique_onboard_view.dart';
 import 'screens/settings_screen.dart';
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +43,6 @@ class MyApp extends StatelessWidget {
             ChangeNotifierProvider(create: (_) => SplashViewModel()),
             ChangeNotifierProvider(create: (_) => MainTabViewModel()),
             ChangeNotifierProvider(create: (_) => HomeViewModel()),
-            ChangeNotifierProvider(create: (_) => ScanViewModel()),
             ChangeNotifierProvider(create: (_) => CollectionViewModel()),
           ],
           child: Consumer<AppProvider>(
@@ -110,10 +107,7 @@ class MyApp extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusM),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
-            width: 2,
-          ),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: AppSizes.paddingM,
@@ -128,7 +122,7 @@ class MyApp extends StatelessWidget {
       AppRoutes.splash: (context) => const SplashView(),
       AppRoutes.maintab: (context) => const MainTabView(),
       '/onboard': (context) => const AntiqueOnboardView(),
-      '/paywall': (context) => const AntiquePremiumView(),
+      '/paywall': (context) => const PremiumEntryView(),
       AppRoutes.settings: (context) => const SettingsScreen(),
     };
   }

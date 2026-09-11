@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
 import '../providers/app_provider.dart';
 import 'loading_screen.dart';
-import 'antique_premium/antique_premium_view.dart';
+import 'antique_premium/premium_entry_view.dart';
 
 class AntiqueDetailScreen extends StatefulWidget {
   final String imagePath;
@@ -58,6 +58,10 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
       ],
     );
 
+    // The cropper is a separate activity the reader can leave the app from,
+    // so this screen may already be gone by the time it returns.
+    if (!mounted) return;
+
     if (croppedFile != null) {
       setState(() {
         croppedImagePath = croppedFile.path;
@@ -67,31 +71,31 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
     }
   }
 
-  void _proceedToAnalysis() {
-    if (croppedImagePath != null) {
-      final appProvider = Provider.of<AppProvider>(context, listen: false);
+  Future<void> _proceedToAnalysis() async {
+    if (croppedImagePath == null) return;
 
-      // Check if user is premium
-      if (!appProvider.isPremiumUser) {
-        // Show premium paywall
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const AntiquePremiumView(fromOnboarding: false),
-          ),
-        );
-        return;
-      }
+    final appProvider = Provider.of<AppProvider>(context, listen: false);
 
-      Navigator.pushReplacement(
+    if (!appProvider.isPremiumUser) {
+      await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => LoadingScreen(
-            imagePath: croppedImagePath!,
-          ),
+          builder: (context) => const PremiumEntryView(fromOnboarding: false),
         ),
       );
+
+      // Subscribing was a step towards this scan, not a destination. Anyone
+      // who came back without subscribing simply stays on their photo.
+      if (!mounted || !appProvider.isPremiumUser) return;
     }
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LoadingScreen(imagePath: croppedImagePath!),
+      ),
+    );
   }
 
   void _recrop() {
@@ -158,7 +162,7 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
                               borderRadius: BorderRadius.circular(12.r),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 10,
                                   offset: const Offset(0, 5),
                                 ),

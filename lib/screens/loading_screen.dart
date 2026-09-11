@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -23,6 +24,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   late AnimationController _animationController;
   Timer? _tipTimer;
   Timer? _progressTimer;
+  final CancelToken _cancelToken = CancelToken();
   int currentTipIndex = 0;
   double progress = 0.0;
   double _targetProgress = 0.12;
@@ -96,6 +98,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       final accepted = await ApiService().startScan(
         widget.imagePath,
         additionalInfo: "Scanned from mobile app",
+        cancelToken: _cancelToken,
       );
 
       final accData = accepted['data'];
@@ -126,42 +129,65 @@ class _LoadingScreenState extends State<LoadingScreen>
           );
         }
       }
+    } on ApiException catch (error) {
+      // Leaving the screen cancels the request; that is not a failure to
+      // report back to someone who has already walked away.
+      if (!mounted || error.wasCancelled) return;
+      _failWith(error.message);
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          isAnalyzing = false;
-        });
-
-        String errorMessage = 'Analysis failed';
-        if (e.toString().contains('ApiException:')) {
-          errorMessage = e.toString().replaceFirst('ApiException: ', '');
-        } else {
-          errorMessage = e.toString();
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-
-        Navigator.pop(context);
-      }
+      debugPrint('Analysis failed: $e');
+      if (!mounted) return;
+      // Raw exception text used to reach the reader here, stack noise and all.
+      _failWith('Analysis failed. Please try again.');
     }
+  }
+
+  void _failWith(String message) {
+    setState(() {
+      isAnalyzing = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+
+    Navigator.pop(context);
   }
 
   /// Polls until the scan finishes, then returns it in the same envelope a
   /// synchronous scan uses.
   Future<Map<String, dynamic>> _awaitResult(dynamic scanId) async {
     final deadline = DateTime.now().add(const Duration(minutes: 5));
+    var consecutiveFailures = 0;
+    const maxConsecutiveFailures = 4;
 
     while (DateTime.now().isBefore(deadline)) {
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) throw ApiException('Scan cancelled', null);
 
-      final response = await ApiService().getScanStatus(scanId);
+      final Map<String, dynamic> response;
+      try {
+        response = await ApiService().getScanStatus(
+          scanId,
+          cancelToken: _cancelToken,
+        );
+        consecutiveFailures = 0;
+      } on ApiException catch (error) {
+        if (error.wasCancelled) rethrow;
+
+        // The server is still working on the scan; a dropped poll is no
+        // reason to throw away a report the reader has paid for. Only give up
+        // once the connection has failed repeatedly.
+        consecutiveFailures++;
+        debugPrint('Scan poll failed ($consecutiveFailures): ${error.message}');
+        if (consecutiveFailures >= maxConsecutiveFailures) rethrow;
+        continue;
+      }
+
       final raw = response['data'];
       final status = raw is Map<String, dynamic> ? raw : const <String, dynamic>{};
       _applyStatus(status);
@@ -188,6 +214,9 @@ class _LoadingScreenState extends State<LoadingScreen>
     _animationController.dispose();
     _tipTimer?.cancel();
     _progressTimer?.cancel();
+    // Stops the upload or the in-flight poll instead of letting it run on
+    // against a screen that no longer exists.
+    _cancelToken.cancel('Loading screen dismissed');
     super.dispose();
   }
 

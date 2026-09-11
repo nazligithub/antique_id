@@ -4,22 +4,18 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:appactor_flutter/appactor_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../helpers/appactor_helper.dart';
-import '../../services/supabase_service.dart';
 import '../../providers/app_provider.dart';
-import 'dart:async';
 
 class AntiquePremiumViewModel extends ChangeNotifier {
-  bool _isWeeklySelected = false;
-  bool _isYearlySelected = true;
+  // The trial-led weekly plan is the primary offer when the paywall opens.
+  bool _isWeeklySelected = true;
+  bool _isYearlySelected = false;
   bool _isLoading = false;
-  bool _showYearlyAsMonthly = true; // Remote config value
   bool _configLoaded = false; // Track if remote config has been loaded
-  StreamSubscription? _configSubscription;
 
   bool get isWeeklySelected => _isWeeklySelected;
   bool get isYearlySelected => _isYearlySelected;
   bool get isLoading => _isLoading;
-  bool get showYearlyAsMonthly => _showYearlyAsMonthly;
   bool get configLoaded => _configLoaded;
 
   AppActorPackage? get weeklyPackage => AppactorHelper.shared.weeklyPackage;
@@ -39,7 +35,8 @@ class AntiquePremiumViewModel extends ChangeNotifier {
     final yearlyPriceValue = yearlyPackage?.price ?? 39.99;
     final weeklyYearlyTotal = weeklyPriceValue * 52;
     if (weeklyYearlyTotal > 0) {
-      final savings = ((weeklyYearlyTotal - yearlyPriceValue) / weeklyYearlyTotal * 100);
+      final savings =
+          ((weeklyYearlyTotal - yearlyPriceValue) / weeklyYearlyTotal * 100);
       return savings.round();
     }
     return 70;
@@ -50,50 +47,11 @@ class AntiquePremiumViewModel extends ChangeNotifier {
     _configLoaded = true;
     notifyListeners();
 
-    // Load remote config in background
-    _loadRemoteConfig();
-    _listenToConfigChanges();
-
     // Offerings should already be loaded from splash, but check if we need to load them
     if (!AppactorHelper.shared.hasOfferings) {
       await AppactorHelper.shared.loadOfferings();
       notifyListeners();
     }
-  }
-
-  Future<void> _loadRemoteConfig() async {
-    try {
-      final config = await SupabaseService.getAntiqueIdentifierConfig();
-      if (config != null) {
-        final newStatus = config['status'] ?? true;
-        if (_showYearlyAsMonthly != newStatus) {
-          _showYearlyAsMonthly = newStatus;
-          notifyListeners();
-        }
-      }
-    } catch (e) {
-      debugPrint('Error loading remote config: $e');
-      // Keep default values on error
-    }
-  }
-
-  void _listenToConfigChanges() {
-    _configSubscription = SupabaseService.listenToAntiqueIdentifierConfig().listen(
-      (config) {
-        if (config != null) {
-          final newStatus = config['status'] ?? true;
-          if (_showYearlyAsMonthly != newStatus) {
-            _showYearlyAsMonthly = newStatus;
-            debugPrint('Remote config updated: showYearlyAsMonthly = $_showYearlyAsMonthly');
-            notifyListeners();
-          }
-        }
-      },
-      onError: (error) {
-        debugPrint('Config stream error: $error');
-        // Keep using current config on error
-      },
-    );
   }
 
   void selectWeekly() {
@@ -128,10 +86,8 @@ class AntiquePremiumViewModel extends ChangeNotifier {
         return false;
       }
 
-      AppActorCustomerInfo? customerInfo = await AppactorHelper.shared.purchasePackage(
-        packageToPurchase,
-        placement: 'premium_screen',
-      );
+      AppActorCustomerInfo? customerInfo = await AppactorHelper.shared
+          .purchasePackage(packageToPurchase, placement: 'premium_screen');
 
       _isLoading = false;
       notifyListeners();
@@ -163,7 +119,8 @@ class AntiquePremiumViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      AppActorCustomerInfo? customerInfo = await AppactorHelper.shared.restorePurchases();
+      AppActorCustomerInfo? customerInfo = await AppactorHelper.shared
+          .restorePurchases();
 
       _isLoading = false;
       notifyListeners();
@@ -207,11 +164,5 @@ class AntiquePremiumViewModel extends ChangeNotifier {
   Future<void> saveOnboardingCompletion() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_completed', true);
-  }
-
-  @override
-  void dispose() {
-    _configSubscription?.cancel();
-    super.dispose();
   }
 }

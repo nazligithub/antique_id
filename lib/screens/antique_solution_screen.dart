@@ -5,9 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/app_constants.dart';
+import '../helpers/rating_helper.dart';
 import '../models/antique_analysis.dart';
 import '../providers/app_provider.dart';
 import '../services/collection_service.dart';
@@ -34,6 +38,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
   static const _mutedInk = Color(0xFF76655B);
   static const _accent = Color(0xFF9A6339);
   static const _success = Color(0xFF35734B);
+  static const _appStoreUrl = 'https://apps.apple.com/app/id6753019326';
 
   late final AntiqueAnalysis _analysis;
   bool _isSaving = false;
@@ -45,6 +50,26 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
       widget.analysisResult,
       imagePath: widget.imagePath,
     );
+    _recordCompletedScan();
+    _scheduleRatingPrompt();
+  }
+
+  /// The scanner uses this to tell a first-time reader from a returning one,
+  /// so nothing interrupts a first scan.
+  Future<void> _recordCompletedScan() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(
+      'completed_scans',
+      (prefs.getInt('completed_scans') ?? 0) + 1,
+    );
+  }
+
+  /// Long enough that the reader has seen the report they are being asked
+  /// about, short enough that they are still on it.
+  Future<void> _scheduleRatingPrompt() async {
+    await Future.delayed(const Duration(seconds: 6));
+    if (!mounted) return;
+    await RatingHelper.shared.promptAfterResult(context);
   }
 
   @override
@@ -73,6 +98,10 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
                     _buildDetailsCard(),
                     SizedBox(height: 14.h),
                     _buildDescriptionCard(),
+                    if (_analysis.careTip != null) ...[
+                      SizedBox(height: 14.h),
+                      _buildCareCard(),
+                    ],
                     if (_analysis.similarAntiques.isNotEmpty) ...[
                       SizedBox(height: 14.h),
                       _buildSimilarSection(),
@@ -311,7 +340,27 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 8.h),
+          if (_analysis.priceRange != null ||
+              _analysis.authenticity != null) ...[
+            SizedBox(height: 12.h),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: [
+                if (_analysis.priceRange != null)
+                  _valueChip(
+                    Icons.swap_horiz_rounded,
+                    'Range  ${_analysis.priceRange}',
+                  ),
+                if (_analysis.authenticity != null)
+                  _valueChip(
+                    Icons.verified_outlined,
+                    'Authenticity  ${_analysis.authenticity}',
+                  ),
+              ],
+            ),
+          ],
+          SizedBox(height: 14.h),
           Row(
             children: [
               Icon(
@@ -357,7 +406,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
             itemCount: details.length,
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              mainAxisExtent: 67.h,
+              mainAxisExtent: 76.h,
               crossAxisSpacing: 12.w,
               mainAxisSpacing: 12.h,
             ),
@@ -377,6 +426,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             detail.$2,
@@ -387,14 +437,19 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
                             ),
                           ),
                           SizedBox(height: 3.h),
-                          Text(
-                            detail.$3,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.lato(
-                              color: _ink,
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w700,
+                          // Flexible as well as a taller cell: origins and
+                          // materials come back as full clauses, and the tile
+                          // has to give way rather than overflow.
+                          Flexible(
+                            child: Text(
+                              detail.$3,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.lato(
+                                color: _ink,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ],
@@ -453,6 +508,52 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
           SizedBox(height: 12.h),
           Text(
             _analysis.description,
+            style: GoogleFonts.lato(
+              color: _mutedInk,
+              fontSize: 14.sp,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _valueChip(IconData icon, String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: _accent, size: 13.sp),
+          SizedBox(width: 6.w),
+          Text(
+            label,
+            style: GoogleFonts.lato(
+              color: Colors.white.withValues(alpha: 0.9),
+              fontSize: 11.5.sp,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCareCard() {
+    return _buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(Icons.spa_outlined, 'Caring for it'),
+          SizedBox(height: 12.h),
+          Text(
+            _analysis.careTip!,
             style: GoogleFonts.lato(
               color: _mutedInk,
               fontSize: 14.sp,
@@ -781,9 +882,44 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
     });
   }
 
-  void _shareResult() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sharing will be available soon.')),
-    );
+  /// Shares the photo alongside the figure the reader came for. The valuation
+  /// is the shareable part -- a photo on its own says nothing -- and the store
+  /// link rides with it, which is the only organic route new readers have.
+  Future<void> _shareResult() async {
+    final range = _analysis.priceRange;
+    final valuation = range == null
+        ? _analysis.valueLabel
+        : '${_analysis.valueLabel} ($range)';
+
+    final message = StringBuffer()
+      ..writeln(_analysis.name)
+      ..writeln('Estimated value: $valuation')
+      ..writeln()
+      ..write('Identified with Antique Identifier — $_appStoreUrl');
+
+    // iPad anchors the share sheet to whatever opened it and throws rather
+    // than guessing, so hand it this screen's rect.
+    final box = context.findRenderObject() as RenderBox?;
+    final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+
+    final photo = widget.imagePath;
+    final hasPhoto = photo.isNotEmpty && File(photo).existsSync();
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: message.toString(),
+          subject: _analysis.name,
+          files: hasPhoto ? [XFile(photo)] : null,
+          sharePositionOrigin: origin,
+        ),
+      );
+    } catch (error) {
+      debugPrint('Error sharing result: $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the share sheet.')),
+      );
+    }
   }
 }

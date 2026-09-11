@@ -1,589 +1,194 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../../constants/app_constants.dart';
-import 'scan_viewmodel.dart';
 import '../antique_detail_screen.dart';
-import 'dart:io';
 
-class ScanView extends StatefulWidget {
-  const ScanView({super.key});
+/// Offers the two ways into a scan and forwards the chosen image to the crop
+/// and analysis flow.
+///
+/// This was a pushed full page, which spent a whole screen and a navigation
+/// transition on a choice between two rows. Before that it opened the camera
+/// the moment it appeared, which made the tab feel like a trap and left no way
+/// at all to scan a photo already in the library.
+class ScanSheet {
+  const ScanSheet._();
 
-  @override
-  State<ScanView> createState() => _ScanViewState();
+  /// Opens the picker sheet and carries the chosen photo through to analysis.
+  ///
+  /// The sheet only reports which source was picked; the picking and the
+  /// navigation run against [context], which outlives it. Doing that work from
+  /// inside the sheet would open the camera on top of a sheet already closing,
+  /// and would leave the detail screen pushed onto a dead route.
+  static Future<void> open(BuildContext context) async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.42),
+      // Without this the sheet is capped at 9/16 of the screen and clips its
+      // own content rather than growing to fit it.
+      isScrollControlled: true,
+      builder: (_) => const _ScanSheet(),
+    );
+
+    if (source == null || !context.mounted) return;
+    await _pickAndAnalyse(context, source);
+  }
+
+  static Future<void> _pickAndAnalyse(
+    BuildContext context,
+    ImageSource source,
+  ) async {
+    try {
+      final image = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 95,
+      );
+      if (image == null || !context.mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AntiqueDetailScreen(imagePath: image.path),
+        ),
+      );
+    } catch (error) {
+      debugPrint('Error picking image: $error');
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            source == ImageSource.camera
+                ? 'Could not open the camera.'
+                : 'Could not open your photo library.',
+          ),
+        ),
+      );
+    }
+  }
 }
 
-class _ScanViewState extends State<ScanView> with WidgetsBindingObserver {
-  CameraController? _controller;
-  List<CameraDescription>? _cameras;
-  bool _isInitialized = false;
-  bool _isFlashOn = false;
-  final ImagePicker _picker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _initializeCamera();
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_controller == null || !_controller!.value.isInitialized) {
-      return;
-    }
-
-    if (state == AppLifecycleState.inactive) {
-      _controller?.dispose();
-      setState(() {
-        _isInitialized = false;
-      });
-    } else if (state == AppLifecycleState.resumed && _isInitialized) {
-      _initializeCamera();
-    }
-  }
-
-
-  Future<void> _initializeCamera() async {
-    try {
-      if (_cameras == null || _cameras!.isEmpty) {
-        _cameras = await availableCameras();
-      }
-
-      if (_cameras != null && _cameras!.isNotEmpty) {
-        _controller = CameraController(
-          _cameras![0],
-          ResolutionPreset.high,
-          enableAudio: false,
-        );
-
-        await _controller!.initialize();
-
-        if (mounted) {
-          setState(() {
-            _isInitialized = true;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error initializing camera: $e');
-    }
-  }
-
-  Future<void> _toggleFlash() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
-    try {
-      if (_isFlashOn) {
-        await _controller!.setFlashMode(FlashMode.off);
-      } else {
-        await _controller!.setFlashMode(FlashMode.torch);
-      }
-      setState(() {
-        _isFlashOn = !_isFlashOn;
-      });
-    } catch (e) {
-      debugPrint('Error toggling flash: $e');
-    }
-  }
-
-  Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
-    try {
-      final XFile photo = await _controller!.takePicture();
-      _processImage(File(photo.path));
-    } catch (e) {
-      debugPrint('Error taking picture: $e');
-    }
-  }
-
-  Future<void> _pickFromGallery() async {
-    try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-      if (image != null) {
-        _processImage(File(image.path));
-      }
-    } catch (e) {
-      debugPrint('Error picking image: $e');
-    }
-  }
-
-  void _processImage(File imageFile) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AntiqueDetailScreen(
-          imagePath: imageFile.path,
-        ),
-      ),
-    );
-  }
+class _ScanSheet extends StatelessWidget {
+  const _ScanSheet();
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ScanViewModel>(
-      builder: (context, viewModel, child) {
-        return Scaffold(
-          backgroundColor: AppColors.background,
-          body: Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/background/antique_background.png'),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: viewModel.isScanning
-                        ? _buildScanningView()
-                        : viewModel.hasResult
-                            ? _buildResultView(viewModel)
-                            : _buildCameraView(viewModel),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+    // The home-indicator inset is padding *inside* the sheet, not a SafeArea
+    // around it: wrapping the container instead leaves the panel stopping
+    // short of the screen edge with a strip of bare barrier showing beneath.
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-  Widget _buildHeader() {
     return Container(
-      padding: EdgeInsets.all(AppSizes.paddingM),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: Icon(
-              Icons.arrow_back,
-              color: AppColors.primary,
-              size: 28.sp,
-            ),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Scan Antique',
-                  style: AppTextStyles.h2.copyWith(
-                    color: AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: AppSizes.paddingS),
-                Text(
-                  'Capture or upload an image to identify',
-                  style: AppTextStyles.body2.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 40.w),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCameraView(ScanViewModel viewModel) {
-    return Column(
-      children: [
-        Expanded(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 30.w),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20.r),
-                  color: Colors.black,
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20.r),
-                  child: _isInitialized && _controller != null
-                      ? AspectRatio(
-                          aspectRatio: 1 / _controller!.value.aspectRatio,
-                          child: CameraPreview(_controller!),
-                        )
-                      : Container(
-                          color: Colors.black,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
-                              strokeWidth: 2.w,
-                            ),
-                          ),
-                        ),
-                ),
-              ),
-
-              if (_isInitialized && _controller != null)
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 30.w),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.5),
-                      width: 2.w,
-                    ),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        child: _buildCornerBracket(true, true),
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: _buildCornerBracket(true, false),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        child: _buildCornerBracket(false, true),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: _buildCornerBracket(false, false),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-
-        SizedBox(height: AppSizes.paddingXL),
-
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSizes.paddingXL),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildControlButton(
-                icon: Icons.photo_library,
-                onTap: _pickFromGallery,
-              ),
-              _buildCameraButton(),
-              _buildControlButton(
-                icon: _isFlashOn ? Icons.flash_on : Icons.flash_off,
-                onTap: _toggleFlash,
-                isFlash: true,
-              ),
-            ],
-          ),
-        ),
-
-        if (viewModel.hasScanError)
-          Padding(
-            padding: EdgeInsets.all(AppSizes.paddingM),
-            child: Text(
-              viewModel.scanError!,
-              style: AppTextStyles.body2.copyWith(
-                color: AppColors.error,
-              ),
-            ),
-          ),
-
-        SizedBox(height: AppSizes.paddingXL),
-      ],
-    );
-  }
-
-  Widget _buildCornerBracket(bool isTop, bool isLeft) {
-    return Container(
-      width: 30.w,
-      height: 30.h,
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 14.h + bottomInset),
       decoration: BoxDecoration(
-        border: Border(
-          top: isTop ? BorderSide(color: AppColors.primary, width: 3.w) : BorderSide.none,
-          bottom: !isTop ? BorderSide(color: AppColors.primary, width: 3.w) : BorderSide.none,
-          left: isLeft ? BorderSide(color: AppColors.primary, width: 3.w) : BorderSide.none,
-          right: !isLeft ? BorderSide(color: AppColors.primary, width: 3.w) : BorderSide.none,
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: isTop && isLeft ? Radius.circular(20.r) : Radius.zero,
-          topRight: isTop && !isLeft ? Radius.circular(20.r) : Radius.zero,
-          bottomLeft: !isTop && isLeft ? Radius.circular(20.r) : Radius.zero,
-          bottomRight: !isTop && !isLeft ? Radius.circular(20.r) : Radius.zero,
-        ),
+        color: AppColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
       ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isFlash = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 60.w,
-        height: 60.h,
-        decoration: BoxDecoration(
-          color: (isFlash && _isFlashOn) ? AppColors.primary : AppColors.white.withValues(alpha: 0.9),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.black.withValues(alpha: 0.2),
-              blurRadius: 8.r,
-              offset: Offset(0, 4.h),
-            ),
-          ],
-        ),
-        child: Icon(
-          icon,
-          color: (isFlash && _isFlashOn) ? AppColors.white : AppColors.primary,
-          size: 28.sp,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCameraButton() {
-    return GestureDetector(
-      onTap: _takePicture,
-      child: Container(
-        width: 80.w,
-        height: 80.h,
-        decoration: BoxDecoration(
-          color: AppColors.primary,
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: AppColors.white,
-            width: 4.w,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.black.withValues(alpha: 0.3),
-              blurRadius: 12.r,
-              offset: Offset(0, 6.h),
-            ),
-          ],
-        ),
-        child: Icon(
-          Icons.camera_alt,
-          color: AppColors.white,
-          size: 36.sp,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScanningView() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          strokeWidth: 3.w,
-        ),
-        SizedBox(height: AppSizes.paddingL),
-        Text(
-          'Scanning...',
-          style: AppTextStyles.body1.copyWith(
-            color: AppColors.textPrimary,
-          ),
-        ),
-        SizedBox(height: AppSizes.paddingS),
-        Text(
-          'Analyzing the antique item',
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildResultView(ScanViewModel viewModel) {
-    final antique = viewModel.scannedAntique!;
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(AppSizes.paddingM),
       child: Column(
-        children: [
-          Container(
-            height: 250.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.grey.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppSizes.radiusL),
-            ),
-            child: viewModel.scannedImage != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusL),
-                    child: Image.file(
-                      viewModel.scannedImage!,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Center(
-                    child: Icon(
-                      Icons.image,
-                      size: 60.sp,
-                      color: AppColors.grey,
-                    ),
-                  ),
-          ),
-          SizedBox(height: AppSizes.paddingL),
-          Container(
-            padding: EdgeInsets.all(AppSizes.paddingL),
-            decoration: BoxDecoration(
-              color: AppColors.cardBg,
-              borderRadius: BorderRadius.circular(AppSizes.radiusL),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withValues(alpha: 0.1),
-                  blurRadius: 10.r,
-                  offset: Offset(0, 5.h),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Text(
-                    antique.name,
-                    style: AppTextStyles.h2.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                SizedBox(height: AppSizes.paddingM),
-                _buildInfoRow('Description', antique.description),
-                _buildInfoRow('Era', antique.era),
-                _buildInfoRow('Origin', antique.origin),
-                _buildInfoRow('Estimated Value', antique.price),
-                SizedBox(height: AppSizes.paddingL),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(right: AppSizes.paddingS),
-                        child: _buildActionButton(
-                          label: 'Scan Again',
-                          icon: Icons.refresh,
-                          onTap: () => viewModel.clearResult(),
-                          isPrimary: false,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(left: AppSizes.paddingS),
-                        child: _buildActionButton(
-                          label: 'Add to Collection',
-                          icon: Icons.add_circle,
-                          onTap: () => viewModel.addToCollection(),
-                          isPrimary: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: AppSizes.paddingS),
-      child: Row(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Center(child: _grabber()),
+          SizedBox(height: 16.h),
           Text(
-            '$label: ',
-            style: AppTextStyles.body2.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w600,
+            'Scan an antique',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 20.sp,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
           ),
-          Expanded(
-            child: Text(
-              value,
-              style: AppTextStyles.body2.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
+          SizedBox(height: 14.h),
+          _option(
+            context,
+            icon: Icons.photo_camera_outlined,
+            title: 'Take a photo',
+            primary: true,
+            source: ImageSource.camera,
+          ),
+          SizedBox(height: 8.h),
+          _option(
+            context,
+            icon: Icons.photo_library_outlined,
+            title: 'Choose from library',
+            primary: false,
+            source: ImageSource.gallery,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButton({
-    required String label,
+  Widget _grabber() {
+    return Container(
+      width: 36.w,
+      height: 4.h,
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(2.r),
+      ),
+    );
+  }
+
+  Widget _option(
+    BuildContext context, {
     required IconData icon,
-    required VoidCallback onTap,
-    required bool isPrimary,
+    required String title,
+    required bool primary,
+    required ImageSource source,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          vertical: AppSizes.paddingM,
-          horizontal: AppSizes.paddingL,
-        ),
-        decoration: BoxDecoration(
-          color: isPrimary ? AppColors.primary : AppColors.cardBg,
-          border: isPrimary
-              ? null
-              : Border.all(color: AppColors.primary, width: 1.5.w),
-          borderRadius: BorderRadius.circular(AppSizes.radiusM),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isPrimary ? AppColors.white : AppColors.primary,
-              size: 20.sp,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pop(context, source),
+        borderRadius: BorderRadius.circular(18.r),
+        child: Ink(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
+          decoration: BoxDecoration(
+            color: primary
+                ? AppColors.primary
+                : Colors.white.withValues(alpha: 0.82),
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(
+              color: primary
+                  ? Colors.transparent
+                  : AppColors.primary.withValues(alpha: 0.18),
             ),
-            SizedBox(width: AppSizes.paddingS),
-            Flexible(
-              child: Text(
-                label,
-                style: AppTextStyles.button.copyWith(
-                  color: isPrimary ? AppColors.white : AppColors.primary,
-                  fontSize: 14.sp,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 38.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  color: primary
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : AppColors.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(11.r),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                child: Icon(
+                  icon,
+                  size: 20.sp,
+                  color: primary ? Colors.white : AppColors.primary,
+                ),
               ),
-            ),
-          ],
+              SizedBox(width: 13.w),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.lato(
+                    fontSize: 15.5.sp,
+                    fontWeight: FontWeight.w700,
+                    color: primary ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:appactor_flutter/appactor_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class AppactorHelper {
   static const String _publicKey = 'pk_E2Y9hdD2I4yoISWMVSIvhplssEfodblm';
@@ -22,10 +22,7 @@ class AppactorHelper {
     }
 
     try {
-      await AppActor.instance.configure(
-        _publicKey,
-        appUserId: userId,
-      );
+      await AppActor.instance.configure(_publicKey, appUserId: userId);
 
       _isInitialized = true;
       debugPrint('Appactor initialized successfully');
@@ -35,22 +32,88 @@ class AppactorHelper {
     }
   }
 
+  /// Reads the activation interstitial flag from AppActor Remote Config.
+  Future<bool> isThreeDayActivationEnabled() async {
+    const key = '3daysactivated';
+    final value = await getRemoteConfigValue(key);
+    final enabled = _toBool(value);
+    debugPrint('AppActor remote config: $key=$value (enabled=$enabled)');
+    return enabled;
+  }
+
+  /// Whether the post-onboarding rating ask is switched on.
+  Future<bool> isOnboardRatingEnabled() async {
+    const key = 'onboard_rating';
+    final value = await getRemoteConfigValue(key);
+    final enabled = _toBool(value);
+    debugPrint('AppActor remote config: $key=$value (enabled=$enabled)');
+    return enabled;
+  }
+
+  /// Reads one AppActor Remote Config value, falling back to the full response
+  /// and then the SDK cache. This keeps config switches usable during a brief
+  /// network interruption without making local values the source of truth.
+  Future<dynamic> getRemoteConfigValue(String key) async {
+    try {
+      var config = await AppActor.instance.getRemoteConfig(key);
+      if (config?.value != null) return config!.value;
+
+      final configs = await AppActor.instance.getRemoteConfigs();
+      config = configs[key];
+      if (config?.value != null) {
+        debugPrint('AppActor remote configs: ${configs.items}');
+        return config!.value;
+      }
+
+      final cachedConfigs = await AppActor.instance.getCachedRemoteConfigs();
+      return cachedConfigs?[key]?.value;
+    } catch (e) {
+      debugPrint('Error loading AppActor remote config $key: $e');
+      try {
+        return (await AppActor.instance.getCachedRemoteConfigs())?[key]?.value;
+      } catch (cacheError) {
+        debugPrint(
+          'Error loading cached AppActor remote config $key: $cacheError',
+        );
+        return null;
+      }
+    }
+  }
+
+  bool _toBool(dynamic value) {
+    return switch (value) {
+      bool value => value,
+      num value => value != 0,
+      String value =>
+        value.trim().toLowerCase() == 'true' || value.trim() == '1',
+      _ => false,
+    };
+  }
+
   /// Load offerings from Appactor
   Future<void> loadOfferings() async {
     try {
       offerings = await AppActor.instance.getOfferings();
-      debugPrint('Loaded offerings: ${offerings?.current != null ? "success" : "no current offering"}');
+      debugPrint(
+        'Loaded offerings: ${offerings?.current != null ? "success" : "no current offering"}',
+      );
 
       if (offerings?.current != null) {
         debugPrint('Available packages:');
         if (offerings!.current!.weekly != null) {
-          debugPrint('  - Weekly: ${offerings!.current!.weekly!.localizedPriceString ?? "N/A"}');
+          debugPrint(
+            '  - Weekly: ${offerings!.current!.weekly!.localizedPriceString ?? "N/A"}',
+          );
         }
         if (offerings!.current!.monthly != null) {
-          debugPrint('  - Monthly: ${offerings!.current!.monthly!.localizedPriceString ?? "N/A"}');
+          debugPrint(
+            '  - Monthly: ${offerings!.current!.monthly!.localizedPriceString ?? "N/A"}',
+          );
         }
         if (offerings!.current!.annual != null) {
-          debugPrint('  - Annual: ${offerings!.current!.annual!.localizedPriceString ?? "N/A"}');
+          debugPrint(
+            '  - Annual: ${offerings!.current!.annual!.localizedPriceString ?? "N/A"}',
+          );
         }
       }
     } catch (e) {
@@ -92,7 +155,10 @@ class AppactorHelper {
   }
 
   /// Purchase a package
-  Future<AppActorCustomerInfo?> purchasePackage(AppActorPackage package, {String? placement}) async {
+  Future<AppActorCustomerInfo?> purchasePackage(
+    AppActorPackage package, {
+    String? placement,
+  }) async {
     try {
       debugPrint('Attempting to purchase: ${package.productId}');
 
