@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../helpers/appactor_helper.dart';
+import '../../helpers/intro_offer_helper.dart';
 import 'antique_premium_view.dart';
 
 class PremiumEntryView extends StatefulWidget {
@@ -91,9 +92,29 @@ class _ThreeDayActivationViewState extends State<ThreeDayActivationView>
   Timer? _completionTimer;
   bool _didComplete = false;
 
+  /// Starts on the free-trial wording because that is what this screen was
+  /// built to announce, and is corrected the moment StoreKit answers. The
+  /// screen animates for well over a second before either line is legible, so
+  /// the swap lands long before anyone can read the wrong one.
+  String _offerLine = '3-day free trial unlocked';
+
+  Future<void> _loadOfferLine() async {
+    final productId = AppactorHelper.shared.weeklyPackage?.productId;
+    if (productId == null || productId.isEmpty) return;
+    final offer = await IntroOfferHelper.forProduct(productId);
+    if (offer == null || !mounted) return;
+    final days = offer.totalDays;
+    setState(() {
+      _offerLine = offer.isFree
+          ? '$days-day free trial unlocked'
+          : '$days days for ${offer.displayPrice}';
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadOfferLine();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1350),
@@ -172,7 +193,7 @@ class _ThreeDayActivationViewState extends State<ThreeDayActivationView>
                         ),
                         SizedBox(height: 7.h),
                         Text(
-                          '3-day free trial unlocked',
+                          _offerLine,
                           textAlign: TextAlign.center,
                           style: GoogleFonts.lato(
                             fontSize: 16.sp,

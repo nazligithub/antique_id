@@ -170,11 +170,11 @@ class AntiquePremiumView extends StatelessWidget {
                                     children: [
                                       _buildPricingOption(
                                         title: 'Weekly Access',
-                                        subtitle:
-                                            '3 days free, then cancel anytime',
+                                        subtitle: viewModel.weeklySubtitle,
                                         price: viewModel.weeklyPrice,
                                         isSelected: viewModel.isWeeklySelected,
                                         isWeekly: true,
+                                        badgeLabel: viewModel.weeklyBadgeLabel,
                                         onTap: () => viewModel.selectWeekly(),
                                       ),
                                       SizedBox(height: 12.h),
@@ -205,7 +205,7 @@ class AntiquePremiumView extends StatelessWidget {
                             padding: EdgeInsets.symmetric(horizontal: 20.w),
                             child: _AnimatedPremiumButton(
                               isLoading: viewModel.isLoading,
-                              isWeeklySelected: viewModel.isWeeklySelected,
+                              ctaLabel: viewModel.primaryCtaLabel,
                               onPressed: () async {
                                 final purchased = await viewModel.purchase(
                                   context,
@@ -355,6 +355,7 @@ class AntiquePremiumView extends StatelessWidget {
     required bool isSelected,
     required bool isWeekly,
     required VoidCallback onTap,
+    String? badgeLabel,
   }) {
     const accentColor = _premiumAccent;
 
@@ -453,7 +454,7 @@ class AntiquePremiumView extends StatelessWidget {
               ],
             ),
           ),
-          if (isWeekly)
+          if (isWeekly && badgeLabel != null)
             Positioned(
               top: -11.h,
               right: 12.w,
@@ -471,7 +472,7 @@ class AntiquePremiumView extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  '3 DAYS FREE',
+                  badgeLabel,
                   style: GoogleFonts.lato(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w800,
@@ -489,12 +490,12 @@ class AntiquePremiumView extends StatelessWidget {
 
 class _AnimatedPremiumButton extends StatefulWidget {
   final bool isLoading;
-  final bool isWeeklySelected;
+  final String ctaLabel;
   final Future<void> Function() onPressed;
 
   const _AnimatedPremiumButton({
     required this.isLoading,
-    required this.isWeeklySelected,
+    required this.ctaLabel,
     required this.onPressed,
   });
 
@@ -557,9 +558,7 @@ class _AnimatedPremiumButtonState extends State<_AnimatedPremiumButton>
                 child: widget.isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
                     : Text(
-                        widget.isWeeklySelected
-                            ? 'Start 3-Day Free Trial'
-                            : 'Continue',
+                        widget.ctaLabel,
                         style: GoogleFonts.lato(
                           fontSize: 18.sp,
                           fontWeight: FontWeight.w700,
