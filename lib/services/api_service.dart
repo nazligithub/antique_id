@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
@@ -11,20 +10,12 @@ class ApiService {
 
   static const String _userIdKey = 'api_user_id';
 
-  /// Presented as `x-api-key`. This is not a secret in any strong sense -- it
-  /// ships inside the binary and anyone willing to unpack the app can read it
-  /// out. What it buys is that knowing the URL is no longer enough to spend
-  /// the scan budget, which is the abuse that actually happens.
-  static const String _apiKey =
-      'ak_1117b6c0f872589ba0e453476855fc558d761710ebee9289';
-
   /// Only the scan endpoints get the long window: the server still falls back
   /// to answering a scan synchronously.
   static const Duration _scanTimeout = Duration(seconds: 180);
 
   late final Dio _dio;
   Future<String>? _userIdRequest;
-  Future<String>? _appVersionRequest;
 
   ApiService._internal() {
     _initDio();
@@ -47,8 +38,6 @@ class ApiService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         options.headers['x-user-id'] = await _userId();
-        options.headers['x-api-key'] = _apiKey;
-        options.headers['x-app-version'] = await _appVersion();
         handler.next(options);
       },
     ));
@@ -58,23 +47,6 @@ class ApiService {
         requestBody: true,
         responseBody: true,
       ));
-    }
-  }
-
-  /// The release the caller is running, sent so the server can tell an old
-  /// build apart from an unknown caller. Both arrive without a valid key while
-  /// the gate is in report-only mode, and only this header says which is which.
-  Future<String> _appVersion() {
-    return _appVersionRequest ??= _loadAppVersion();
-  }
-
-  Future<String> _loadAppVersion() async {
-    try {
-      final info = await PackageInfo.fromPlatform();
-      return '${info.version}+${info.buildNumber}';
-    } catch (error) {
-      debugPrint('Could not read app version: $error');
-      return 'unknown';
     }
   }
 
