@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
 
 /// A presentation-friendly snapshot of an analysis response.
 ///
@@ -82,11 +83,16 @@ class AntiqueAnalysis {
     return null;
   }
 
-  String _text(List<String> keys, {String fallback = 'Not available'}) {
+  String _text(List<String> keys, {String? fallback}) {
     final value = _read(keys);
-    if (value == null) return fallback;
+    if (value == null) return fallback ?? 'analysis_not_available'.tr();
     if (value is Map || value is List) return jsonEncode(value);
     return value.toString().trim();
+  }
+
+  bool _has(List<String> keys) {
+    final value = _read(keys);
+    return value != null && value.toString().trim().isNotEmpty;
   }
 
   String get name => _text([
@@ -95,7 +101,7 @@ class AntiqueAnalysis {
     'title',
     'item_name',
     'object_name',
-  ], fallback: 'Unknown antique');
+  ], fallback: 'analysis_unknown_antique'.tr());
 
   /// The report's prose. The analysis returns this as historical_background;
   /// looking only for 'description' left every report saying it had none.
@@ -107,19 +113,54 @@ class AntiqueAnalysis {
     'history',
     'cultural_context',
     'cultural_impact',
-  ], fallback: 'No description available yet.');
+  ], fallback: 'analysis_no_description'.tr());
 
-  String get period =>
-      _text(['era', 'period', 'estimated_age', 'estimatedAge', 'time_period']);
+  static const _periodKeys = [
+    'era',
+    'period',
+    'estimated_age',
+    'estimatedAge',
+    'time_period',
+  ];
+  String get period => _text(_periodKeys);
+  bool get hasPeriod => _has(_periodKeys);
 
   String get origin =>
       _text(['origin', 'country_of_origin', 'country', 'made_in']);
 
   String get material => _text(['material', 'materials', 'medium']);
 
-  String get category => _text(['category', 'type', 'object_type']);
+  static const _categoryKeys = ['category', 'type', 'object_type'];
+  String get category => _text(_categoryKeys);
+  bool get hasCategory => _has(_categoryKeys);
 
-  String get condition => _text(['condition', 'grading', 'grade']);
+  // The server grades in English whatever language the rest of the report is
+  // in, so these two words are translated here rather than shown as sent.
+  static const _conditionLabels = {
+    'excellent': 'analysis_condition_excellent',
+    'good': 'analysis_condition_good',
+    'fair': 'analysis_condition_fair',
+    'poor': 'analysis_condition_poor',
+  };
+  static const _authenticityLabels = {
+    'high': 'analysis_authenticity_high',
+    'medium': 'analysis_authenticity_medium',
+    'low': 'analysis_authenticity_low',
+  };
+
+  static String _translated(String value, Map<String, String> labels) {
+    final key = labels[value.trim().toLowerCase()];
+    return key == null ? value : key.tr();
+  }
+
+  /// Excellent, Good, Fair or Poor.
+  String get condition {
+    final raw = _text(['condition', 'grading', 'grade'], fallback: '');
+    if (raw.isEmpty || raw.toLowerCase() == 'unknown') {
+      return 'analysis_not_available'.tr();
+    }
+    return _translated(raw, _conditionLabels);
+  }
 
   /// Rarity arrives as a 1-10 score, not a word, so a text-only lookup always
   /// came back empty and the tile read "Not available" on every scan.
@@ -143,13 +184,27 @@ class AntiqueAnalysis {
     return range;
   }
 
-  /// High, Medium or Low, as returned. Shown because a valuation the model is
-  /// unsure of should not look the same as one it is confident about.
+  /// High, Medium or Low. Shown because a valuation the model is unsure of
+  /// should not look the same as one it is confident about.
   String? get authenticity {
     final value = _text(
       ['authenticity', 'authenticity_confidence', 'authenticityConfidence'],
       fallback: '',
     );
+    return value.isEmpty ? null : _translated(value, _authenticityLabels);
+  }
+
+  /// The English name to search marketplaces with, whatever language the
+  /// report itself is written in.
+  String? get searchName {
+    final value = _text(['search_name', 'searchName'], fallback: '');
+    return value.isEmpty ? null : value;
+  }
+
+  /// The language tag the report was written in ("de", "pt-BR"), when the
+  /// server says.
+  String? get language {
+    final value = _text(['language'], fallback: '');
     return value.isEmpty ? null : value;
   }
 
@@ -169,7 +224,7 @@ class AntiqueAnalysis {
       'price',
     ]);
 
-    if (value == null) return 'Value not determined';
+    if (value == null) return 'analysis_value_undetermined'.tr();
     if (value is Map) {
       final minimum = value['min'] ?? value['minimum'] ?? value['low'];
       final maximum = value['max'] ?? value['maximum'] ?? value['high'];
@@ -231,11 +286,11 @@ class AntiqueAnalysis {
         name:
             map['name']?.toString() ??
             map['title']?.toString() ??
-            'Similar antique',
+            'analysis_similar_antique'.tr(),
         price:
             map['price']?.toString() ??
             map['value']?.toString() ??
-            'Price unavailable',
+            'analysis_price_unavailable'.tr(),
         source: map['source']?.toString() ?? map['marketplace']?.toString(),
         imageUrl: map['image_url']?.toString() ?? map['imageUrl']?.toString(),
         url:

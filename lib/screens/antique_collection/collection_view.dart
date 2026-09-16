@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -100,14 +101,14 @@ class _CollectionViewState extends State<CollectionView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Collection',
+                    'tab_collection'.tr(),
                     style: AppTextStyles.h2.copyWith(
                       color: AppColors.textPrimary,
                     ),
                   ),
                   if (totalItems > 0)
                     Text(
-                      'Your curated antique collection',
+                      'collection_subtitle'.tr(),
                       style: AppTextStyles.body2.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -132,7 +133,7 @@ class _CollectionViewState extends State<CollectionView> {
                         Icon(Icons.add, color: AppColors.white, size: 18.sp),
                         SizedBox(width: 4.w),
                         Text(
-                          'Add Collection',
+                          'collection_add'.tr(),
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.white,
                             fontWeight: FontWeight.w600,
@@ -165,7 +166,7 @@ class _CollectionViewState extends State<CollectionView> {
                           ),
                         ),
                         Text(
-                          'Antiques',
+                          'collection_stat_antiques'.tr(),
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.primary,
                           ),
@@ -189,7 +190,7 @@ class _CollectionViewState extends State<CollectionView> {
                           ),
                         ),
                         Text(
-                          'Collections',
+                          'collection_stat_collections'.tr(),
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.primary,
                           ),
@@ -229,7 +230,7 @@ class _CollectionViewState extends State<CollectionView> {
             onChanged: viewModel.setSearchQuery,
             style: AppTextStyles.body2.copyWith(color: AppColors.textPrimary),
             decoration: InputDecoration(
-              hintText: 'Search your collection',
+              hintText: 'collection_search_hint'.tr(),
               hintStyle: AppTextStyles.body2.copyWith(
                 color: AppColors.textSecondary.withValues(alpha: 0.6),
               ),
@@ -240,7 +241,7 @@ class _CollectionViewState extends State<CollectionView> {
               ),
               suffixIcon: hasSearch
                   ? IconButton(
-                      tooltip: 'Clear search',
+                      tooltip: 'collection_clear_search'.tr(),
                       onPressed: () {
                         _searchController.clear();
                         viewModel.setSearchQuery('');
@@ -286,19 +287,19 @@ class _CollectionViewState extends State<CollectionView> {
                     children: [
                       _buildValueFilterChip(
                         viewModel,
-                        label: 'All',
+                        label: 'collection_filter_all'.tr(),
                         filter: CollectionValueFilter.all,
                       ),
                       SizedBox(width: AppSizes.paddingXS),
                       _buildValueFilterChip(
                         viewModel,
-                        label: 'Valued',
+                        label: 'collection_filter_valued'.tr(),
                         filter: CollectionValueFilter.valued,
                       ),
                       SizedBox(width: AppSizes.paddingXS),
                       _buildValueFilterChip(
                         viewModel,
-                        label: 'Needs review',
+                        label: 'collection_filter_needs_review'.tr(),
                         filter: CollectionValueFilter.needsReview,
                       ),
                     ],
@@ -392,22 +393,22 @@ class _CollectionViewState extends State<CollectionView> {
           onChanged: (sort) {
             if (sort != null) viewModel.setSort(sort);
           },
-          items: const [
+          items: [
             DropdownMenuItem(
               value: CollectionSort.newest,
-              child: Text('Newest'),
+              child: Text('collection_sort_newest'.tr()),
             ),
             DropdownMenuItem(
               value: CollectionSort.oldest,
-              child: Text('Oldest'),
+              child: Text('collection_sort_oldest'.tr()),
             ),
             DropdownMenuItem(
               value: CollectionSort.highestValue,
-              child: Text('Value'),
+              child: Text('collection_sort_value'.tr()),
             ),
             DropdownMenuItem(
               value: CollectionSort.alphabetical,
-              child: Text('A–Z'),
+              child: Text('collection_sort_alphabetical'.tr()),
             ),
           ],
         ),
@@ -451,7 +452,7 @@ class _CollectionViewState extends State<CollectionView> {
                     ),
                     SizedBox(width: AppSizes.paddingXS),
                     Text(
-                      'All',
+                      'collection_filter_all'.tr(),
                       style: AppTextStyles.body2.copyWith(
                         color: viewModel.selectedCollection == null
                             ? AppColors.white
@@ -542,7 +543,7 @@ class _CollectionViewState extends State<CollectionView> {
                   borderRadius: BorderRadius.circular(AppSizes.radiusM),
                 ),
               ),
-              child: Text('Try Again', style: AppTextStyles.button),
+              child: Text('common_try_again'.tr(), style: AppTextStyles.button),
             ),
           ],
         ),
@@ -555,8 +556,8 @@ class _CollectionViewState extends State<CollectionView> {
     if (viewModel.collections.isEmpty) {
       return _buildEmptyState(
         context,
-        title: 'Your collection is empty',
-        subtitle: 'Save your first antique to begin your archive',
+        title: 'collection_empty_title'.tr(),
+        subtitle: 'collection_empty_subtitle'.tr(),
         action: ElevatedButton(
           onPressed: () => viewModel.createNewCollection(context),
           style: ElevatedButton.styleFrom(
@@ -574,7 +575,7 @@ class _CollectionViewState extends State<CollectionView> {
             children: [
               Icon(Icons.add, color: AppColors.white, size: 20.sp),
               SizedBox(width: AppSizes.paddingS),
-              Text('Add Collection', style: AppTextStyles.button),
+              Text('collection_add'.tr(), style: AppTextStyles.button),
             ],
           ),
         ),
@@ -588,11 +589,11 @@ class _CollectionViewState extends State<CollectionView> {
       return _buildEmptyState(
         context,
         title: sourceHasItems
-            ? 'No antiques match your filters'
-            : 'This collection is empty',
+            ? 'collection_no_match_title'.tr()
+            : 'collection_group_empty_title'.tr(),
         subtitle: sourceHasItems
-            ? 'Try a different search or filter'
-            : 'Save an antique here to keep it close at hand',
+            ? 'collection_no_match_subtitle'.tr()
+            : 'collection_group_empty_subtitle'.tr(),
       );
     }
 
@@ -854,18 +855,18 @@ class _CollectionViewState extends State<CollectionView> {
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
         ),
         title: Text(
-          'Remove from Collection',
+          'collection_remove_title'.tr(),
           style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
         ),
         content: Text(
-          'Are you sure you want to remove "${antique.name}" from your collection?',
+          'collection_remove_message'.tr(namedArgs: {'name': antique.name}),
           style: AppTextStyles.body2.copyWith(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              'common_cancel'.tr(),
               style: AppTextStyles.body2.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -877,7 +878,7 @@ class _CollectionViewState extends State<CollectionView> {
               await viewModel.removeFromCollection(antique.id);
             },
             child: Text(
-              'Remove',
+              'common_remove'.tr(),
               style: AppTextStyles.body2.copyWith(
                 color: AppColors.error,
                 fontWeight: FontWeight.bold,
@@ -906,13 +907,13 @@ class _CollectionViewState extends State<CollectionView> {
           borderRadius: BorderRadius.circular(AppSizes.radiusL),
         ),
         title: Text(
-          'Rename Collection',
+          'collection_rename_title'.tr(),
           style: AppTextStyles.h3.copyWith(color: AppColors.textPrimary),
         ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: 'Collection Name...',
+            hintText: 'collection_name_hint'.tr(),
             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16.sp),
             border: UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -928,7 +929,7 @@ class _CollectionViewState extends State<CollectionView> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              'common_cancel'.tr(),
               style: AppTextStyles.body2.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -949,7 +950,7 @@ class _CollectionViewState extends State<CollectionView> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Collection renamed to "${controller.text.trim()}"',
+                        'collection_renamed'.tr(namedArgs: {'name': controller.text.trim()}),
                       ),
                       backgroundColor: AppColors.primary,
                       duration: const Duration(seconds: 2),
@@ -960,7 +961,7 @@ class _CollectionViewState extends State<CollectionView> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                          'Failed to rename collection: ${e.toString()}',
+                          'collection_rename_failed'.tr(namedArgs: {'error': e.toString()}),
                         ),
                         backgroundColor: AppColors.error,
                         duration: const Duration(seconds: 3),
@@ -973,7 +974,7 @@ class _CollectionViewState extends State<CollectionView> {
               }
             },
             child: Text(
-              'Rename',
+              'common_rename'.tr(),
               style: AppTextStyles.body2.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,

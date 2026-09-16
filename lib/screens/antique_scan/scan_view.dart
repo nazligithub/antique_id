@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,8 +63,8 @@ class ScanSheet {
         SnackBar(
           content: Text(
             source == ImageSource.camera
-                ? 'Could not open the camera.'
-                : 'Could not open your photo library.',
+                ? 'scan_camera_error'.tr()
+                : 'scan_library_error'.tr(),
           ),
         ),
       );
@@ -95,7 +96,7 @@ class _ScanSheet extends StatelessWidget {
           Center(child: _grabber()),
           SizedBox(height: 16.h),
           Text(
-            'Scan an antique',
+            'scan_title'.tr(),
             style: GoogleFonts.playfairDisplay(
               fontSize: 20.sp,
               fontWeight: FontWeight.w700,
@@ -106,7 +107,7 @@ class _ScanSheet extends StatelessWidget {
           _option(
             context,
             icon: Icons.photo_camera_outlined,
-            title: 'Take a photo',
+            title: 'scan_take_photo'.tr(),
             primary: true,
             source: ImageSource.camera,
           ),
@@ -114,7 +115,7 @@ class _ScanSheet extends StatelessWidget {
           _option(
             context,
             icon: Icons.photo_library_outlined,
-            title: 'Choose from library',
+            title: 'scan_choose_library'.tr(),
             primary: false,
             source: ImageSource.gallery,
           ),

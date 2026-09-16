@@ -38,6 +38,9 @@ dependencies:
   # State management
   provider: ^6.1.1
 
+  # Localization
+  easy_localization: ^3.0.7
+
   # Network
   dio: ^5.4.0
 
@@ -109,6 +112,7 @@ flutter:
     - assets/background/
     - assets/antique_featured/
     - assets/antique_onboards/
+    - assets/translations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

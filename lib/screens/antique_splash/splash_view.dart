@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../../constants/app_constants.dart';
@@ -51,7 +52,7 @@ class _SplashViewState extends State<SplashView> {
               ),
               SizedBox(height: AppSizes.paddingM),
               Text(
-                'Discover the History',
+                'splash_tagline'.tr(),
                 style: AppTextStyles.body1.copyWith(
                   color: AppColors.textSecondary,
                 ),

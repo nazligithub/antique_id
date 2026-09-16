@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,15 +52,17 @@ class SplashViewModel extends ChangeNotifier {
           child: AlertDialog(
             backgroundColor: const Color(0xFFFAF5ED),
             title: Text(
-              'Update Antique Identifier',
+              'update_title'.tr(),
               style: const TextStyle(
                 color: Color(0xFF3E2723),
                 fontWeight: FontWeight.w700,
               ),
             ),
             content: Text(
-              'Version ${storeInfo.storeVersion} is available. '
-              'You have ${storeInfo.currentVersion}. Please update to continue.',
+              'update_message'.tr(namedArgs: {
+                'store': storeInfo.storeVersion,
+                'installed': storeInfo.currentVersion,
+              }),
               style: const TextStyle(color: Color(0xFF6D4C41)),
             ),
             actions: [
@@ -76,7 +79,7 @@ class SplashViewModel extends ChangeNotifier {
                   backgroundColor: const Color(0xFF8B6F47),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Update now'),
+                child: Text('update_cta'.tr()),
               ),
             ],
           ),

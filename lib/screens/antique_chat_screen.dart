@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -34,7 +35,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
 
     // Hoş geldin mesajı
     _messages.add(ChatMessage(
-      text: "Hello! I'm your antique expert. Ask me anything about antiques, their history, valuation, or identification.",
+      text: 'chat_welcome'.tr(),
       isUser: false,
       timestamp: DateTime.now(),
     ));
@@ -90,7 +91,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
     } catch (e) {
       setState(() {
         _messages.add(ChatMessage(
-          text: "Sorry, I'm having trouble responding right now. Please try again later.",
+          text: 'chat_error_reply'.tr(),
           isUser: false,
           timestamp: DateTime.now(),
         ));
@@ -148,7 +149,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
         responseText = result['response'].toString();
       } else {
         // Parse edilemeyen JSON response için fallback
-        responseText = 'I apologize, but I couldn\'t generate a proper response.';
+        responseText = 'chat_empty_reply'.tr();
       }
 
       // HTML içeriği varsa, ChatMessage'a HTML flag'i ile ekle
@@ -166,7 +167,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
       return responseText; // Bu artık kullanılmayacak, sadece eski kod uyumluluğu için
     } catch (e) {
       debugPrint('Chat API Error: $e');
-      return "I'm sorry, but I'm having technical difficulties. Please try asking your question again.";
+      return 'chat_technical_error'.tr();
     }
   }
 
@@ -289,7 +290,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'AI Antique Expert',
+                  'chat_title'.tr(),
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -297,7 +298,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
                   ),
                 ),
                 Text(
-                  'Online',
+                  'chat_online'.tr(),
                   style: GoogleFonts.lora(
                     fontSize: 12.sp,
                     color: Colors.green,
@@ -487,7 +488,7 @@ class _AntiqueChatScreenState extends State<AntiqueChatScreen> {
                     child: TextField(
                       controller: _messageController,
                       decoration: InputDecoration(
-                        hintText: 'Ask about antiques...',
+                        hintText: 'chat_hint'.tr(),
                         hintStyle: GoogleFonts.lora(
                           color: Colors.grey[500],
                           fontSize: 14.sp,

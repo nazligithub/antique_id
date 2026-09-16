@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -21,10 +22,27 @@ import 'screens/settings_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
   await StorageHelper().init();
   await AppactorHelper.shared.initialize();
   await SupabaseService.initialize();
-  runApp(const MyApp());
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [
+        Locale('en'),
+        Locale('de'),
+        Locale('fr'),
+        Locale('ja'),
+        Locale('ko'),
+        Locale('pt'),
+        Locale('pt', 'BR'),
+        Locale('tr'),
+      ],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('en'),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -48,8 +66,11 @@ class MyApp extends StatelessWidget {
           child: Consumer<AppProvider>(
             builder: (context, appProvider, child) {
               return MaterialApp(
-                title: AppStrings.appName,
+                title: 'app_name'.tr(),
                 debugShowCheckedModeBanner: false,
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
                 theme: _buildTheme(),
                 initialRoute: AppRoutes.splash,
                 routes: _buildRoutes(),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/collection_service.dart';
@@ -67,7 +68,7 @@ class _CollectionSelectionBottomSheetState
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'New Collection',
+                'collection_new'.tr(),
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
@@ -78,7 +79,7 @@ class _CollectionSelectionBottomSheetState
               TextField(
                 controller: _controller,
                 decoration: InputDecoration(
-                  hintText: 'Collection Name...',
+                  hintText: 'collection_name_hint'.tr(),
                   hintStyle: GoogleFonts.lora(
                     color: Colors.grey[400],
                     fontSize: 16.sp,
@@ -106,7 +107,7 @@ class _CollectionSelectionBottomSheetState
                         Navigator.pop(context);
                       },
                       child: Text(
-                        'Cancel',
+                        'common_cancel'.tr(),
                         style: GoogleFonts.lora(
                           fontSize: 16.sp,
                           color: Colors.grey[600],
@@ -133,7 +134,7 @@ class _CollectionSelectionBottomSheetState
                         padding: EdgeInsets.symmetric(vertical: 12.h),
                       ),
                       child: Text(
-                        'Done',
+                        'common_done'.tr(),
                         style: GoogleFonts.lora(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -187,7 +188,7 @@ class _CollectionSelectionBottomSheetState
                   ),
                 ),
                 Text(
-                  'Collection',
+                  'tab_collection'.tr(),
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 18.sp,
                     fontWeight: FontWeight.bold,
@@ -229,7 +230,7 @@ class _CollectionSelectionBottomSheetState
                           ),
                           SizedBox(width: 8.w),
                           Text(
-                            'Add Collection',
+                            'collection_add'.tr(),
                             style: GoogleFonts.lora(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w600,
@@ -262,7 +263,7 @@ class _CollectionSelectionBottomSheetState
                             ),
                             SizedBox(height: 16.h),
                             Text(
-                              'No collections yet',
+                              'collection_none_title'.tr(),
                               style: GoogleFonts.lora(
                                 fontSize: 16.sp,
                                 color: Colors.grey[600],
@@ -270,7 +271,7 @@ class _CollectionSelectionBottomSheetState
                             ),
                             SizedBox(height: 8.h),
                             Text(
-                              'Create your first collection to\norganize your antiques',
+                              'collection_none_subtitle'.tr(),
                               textAlign: TextAlign.center,
                               style: GoogleFonts.lora(
                                 fontSize: 14.sp,

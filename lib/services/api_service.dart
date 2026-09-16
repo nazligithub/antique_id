@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,6 +40,9 @@ class ApiService {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         options.headers['x-user-id'] = await _userId();
+        // The server writes the report in the language it is asked for and
+        // falls back to English when it is not told, so every request says.
+        options.headers['Accept-Language'] = Platform.localeName;
         handler.next(options);
       },
     ));
@@ -107,17 +112,7 @@ class ApiService {
       );
       return response.data;
     } catch (e) {
-      if (e is DioException && e.response?.data != null) {
-        final errorData = e.response!.data;
-        String errorMessage = 'Could not scan antique';
-
-        if (errorData is Map<String, dynamic>) {
-          errorMessage = errorData['message'] ?? errorMessage;
-        }
-
-        throw ApiException(errorMessage, e);
-      }
-      throw ApiException('Could not scan antique', e);
+      throw _scanException(e);
     }
   }
 
@@ -165,20 +160,40 @@ class ApiService {
     }
   }
 
+  /// The server's error messages are English only, so the reader gets the
+  /// app's own wording; the original response stays on the exception.
   ApiException _scanException(Object error) {
     if (error is DioException && error.type == DioExceptionType.cancel) {
       return ApiException(_cancelledMessage, error);
     }
-    if (error is DioException && error.response?.data is Map<String, dynamic>) {
-      final data = error.response!.data as Map<String, dynamic>;
-      return ApiException(data['message'] ?? 'Could not scan antique', error);
+    if (error is DioException && error.response != null) {
+      return ApiException(
+        switch (error.response!.statusCode) {
+          // The only 400 a scan can earn: the photo showed no antique.
+          400 => 'api_not_antique'.tr(),
+          429 => 'api_too_many_requests'.tr(),
+          _ => 'api_scan_failed'.tr(),
+        },
+        error,
+      );
     }
     if (error is DioException &&
         (error.type == DioExceptionType.connectionTimeout ||
             error.type == DioExceptionType.receiveTimeout)) {
-      return ApiException('The connection timed out. Please try again.', error);
+      return ApiException('api_timeout'.tr(), error);
     }
-    return ApiException('Could not scan antique', error);
+    return ApiException('api_scan_failed'.tr(), error);
+  }
+
+  /// Wording for a scan the server finished with `status: failed`.
+  ///
+  /// The reason arrives in English whatever the report language, so it is only
+  /// used to tell a photo with no antique in it from everything else.
+  static String scanFailureMessage(String? serverReason) {
+    if (serverReason != null && serverReason.contains('upload antique image')) {
+      return 'api_not_antique'.tr();
+    }
+    return 'api_scan_failed'.tr();
   }
 
   Future<Map<String, dynamic>> getHistory({int limit = 20, int offset = 0}) async {

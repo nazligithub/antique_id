@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,11 +40,9 @@ class RatingHelper {
     await _ask(
       context,
       key: 'rating_asked_onboarding',
-      title: 'Enjoying Antique Id so far?',
-      message:
-          'We are a small team building this for collectors. A rating helps '
-          'other collectors find us ❤️',
-      cta: 'Rate Us',
+      title: 'rating_onboarding_title'.tr(),
+      message: 'rating_onboarding_message'.tr(),
+      cta: 'rating_cta'.tr(),
     );
   }
 
@@ -51,11 +50,9 @@ class RatingHelper {
   Future<void> promptAfterResult(BuildContext context) => _ask(
         context,
         key: 'rating_asked_result',
-        title: 'Enjoying Antique Id?',
-        message:
-            'A quick rating helps other collectors find us and keeps the app '
-            'improving ❤️',
-        cta: 'Rate Us',
+        title: 'rating_result_title'.tr(),
+        message: 'rating_result_message'.tr(),
+        cta: 'rating_cta'.tr(),
       );
 
   Future<void> _ask(
@@ -104,7 +101,7 @@ class RatingHelper {
     String message,
     String cta,
   ) {
-    const declineLabel = 'Not now';
+    final declineLabel = 'rating_not_now'.tr();
 
     if (Platform.isIOS) {
       return showCupertinoDialog<bool>(
@@ -118,7 +115,7 @@ class RatingHelper {
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text(declineLabel),
+              child: Text(declineLabel),
             ),
             CupertinoDialogAction(
               isDefaultAction: true,
@@ -138,7 +135,7 @@ class RatingHelper {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text(declineLabel),
+            child: Text(declineLabel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),

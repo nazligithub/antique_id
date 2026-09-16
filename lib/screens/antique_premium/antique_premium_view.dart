@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart' hide TextDirection;
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dart:io' show Platform;
@@ -11,20 +12,19 @@ const _premiumAccent = Color(0xFFC28B52);
 
 class AntiquePremiumView extends StatelessWidget {
   final bool fromOnboarding;
+  final AntiquePremiumViewModel? viewModelForTesting;
 
   const AntiquePremiumView({
     super.key,
     this.fromOnboarding =
         true, // Default to true since it's usually from onboard/splash
+    this.viewModelForTesting,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AntiquePremiumViewModel()..initialize(),
-      child: Consumer<AntiquePremiumViewModel>(
-        builder: (context, viewModel, child) {
-          return AnnotatedRegion<SystemUiOverlayStyle>(
+    Widget buildBody(BuildContext context, AntiquePremiumViewModel viewModel, Widget? child) {
+      return AnnotatedRegion<SystemUiOverlayStyle>(
             value: const SystemUiOverlayStyle(
               statusBarBrightness: Brightness.light,
               statusBarIconBrightness: Brightness.dark,
@@ -127,7 +127,7 @@ class AntiquePremiumView extends StatelessWidget {
                             child: Column(
                               children: [
                                 Text(
-                                  'Unlock Premium Antiques',
+                                  'paywall_title'.tr(),
                                   style: GoogleFonts.playfairDisplay(
                                     fontSize: 30.sp,
                                     fontWeight: FontWeight.w600,
@@ -142,17 +142,17 @@ class AntiquePremiumView extends StatelessWidget {
                                   children: [
                                     _buildFeatureItem(
                                       '🏺',
-                                      'Unlimited Antique Scanning',
+                                      'paywall_feature_scanning'.tr(),
                                     ),
                                     SizedBox(height: 8.h),
                                     _buildFeatureItem(
                                       '🔍',
-                                      'Advanced AI Recognition',
+                                      'paywall_feature_recognition'.tr(),
                                     ),
                                     SizedBox(height: 8.h),
                                     _buildFeatureItem(
                                       '🏛️',
-                                      'Premium Collections',
+                                      'paywall_feature_collections'.tr(),
                                     ),
                                   ],
                                 ),
@@ -169,9 +169,9 @@ class AntiquePremiumView extends StatelessWidget {
                                 ? Column(
                                     children: [
                                       _buildPricingOption(
-                                        title: 'Weekly Access',
+                                        title: 'paywall_weekly'.tr(),
                                         subtitle: viewModel.weeklySubtitle,
-                                        price: viewModel.weeklyPrice,
+                                        price: viewModel.weeklyDisplayPrice,
                                         isSelected: viewModel.isWeeklySelected,
                                         isWeekly: true,
                                         badgeLabel: viewModel.weeklyBadgeLabel,
@@ -179,8 +179,8 @@ class AntiquePremiumView extends StatelessWidget {
                                       ),
                                       SizedBox(height: 12.h),
                                       _buildPricingOption(
-                                        title: 'Yearly Access',
-                                        subtitle: 'Billed once a year',
+                                        title: 'paywall_yearly'.tr(),
+                                        subtitle: 'paywall_yearly_subtitle'.tr(),
                                         price: viewModel.yearlyPrice,
                                         isSelected: viewModel.isYearlySelected,
                                         isWeekly: false,
@@ -247,8 +247,8 @@ class AntiquePremiumView extends StatelessWidget {
                               SizedBox(width: 6.w),
                               Text(
                                 Platform.isIOS
-                                    ? 'Secured by App Store'
-                                    : 'Secured by Google Play',
+                                    ? 'paywall_secured_app_store'.tr()
+                                    : 'paywall_secured_google_play'.tr(),
                                 style: GoogleFonts.lato(
                                   fontSize: 14.sp,
                                   color: Colors.white.withValues(alpha: 0.72),
@@ -266,7 +266,7 @@ class AntiquePremiumView extends StatelessWidget {
                               GestureDetector(
                                 onTap: viewModel.openTerms,
                                 child: Text(
-                                  'Terms',
+                                  'paywall_terms'.tr(),
                                   style: GoogleFonts.lato(
                                     fontSize: 13.sp,
                                     color: Colors.white.withValues(alpha: 0.72),
@@ -282,7 +282,7 @@ class AntiquePremiumView extends StatelessWidget {
                               GestureDetector(
                                 onTap: viewModel.openPrivacy,
                                 child: Text(
-                                  'Privacy',
+                                  'paywall_privacy'.tr(),
                                   style: GoogleFonts.lato(
                                     fontSize: 13.sp,
                                     color: Colors.white.withValues(alpha: 0.72),
@@ -305,7 +305,7 @@ class AntiquePremiumView extends StatelessWidget {
                                   }
                                 },
                                 child: Text(
-                                  'Restore',
+                                  'common_restore'.tr(),
                                   style: GoogleFonts.lato(
                                     fontSize: 13.sp,
                                     color: Colors.white.withValues(alpha: 0.72),
@@ -324,8 +324,17 @@ class AntiquePremiumView extends StatelessWidget {
               ),
             ),
           );
-        },
-      ),
+        }
+
+    if (viewModelForTesting != null) {
+      return ChangeNotifierProvider<AntiquePremiumViewModel>.value(
+        value: viewModelForTesting!,
+        child: Consumer<AntiquePremiumViewModel>(builder: buildBody),
+      );
+    }
+    return ChangeNotifierProvider(
+      create: (_) => AntiquePremiumViewModel()..initialize(),
+      child: Consumer<AntiquePremiumViewModel>(builder: buildBody),
     );
   }
 
@@ -458,29 +467,7 @@ class AntiquePremiumView extends StatelessWidget {
             Positioned(
               top: -11.h,
               right: 12.w,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
-                decoration: BoxDecoration(
-                  color: accentColor,
-                  borderRadius: BorderRadius.circular(10.r),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  badgeLabel,
-                  style: GoogleFonts.lato(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2E211A),
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ),
+              child: _OfferBadge(label: badgeLabel),
             ),
         ],
       ),
@@ -504,8 +491,12 @@ class _AnimatedPremiumButton extends StatefulWidget {
 }
 
 class _AnimatedPremiumButtonState extends State<_AnimatedPremiumButton>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final AnimationController _controller;
+
+  /// Runs one way, unlike the pulse: a band of light crosses the button
+  /// during the first two thirds of each cycle and the rest is a rest.
+  late final AnimationController _sweep;
 
   @override
   void initState() {
@@ -516,20 +507,28 @@ class _AnimatedPremiumButtonState extends State<_AnimatedPremiumButton>
       lowerBound: 0.0,
       upperBound: 1.0,
     )..repeat(reverse: true);
+    _sweep = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    )..repeat();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _sweep.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: Listenable.merge([_controller, _sweep]),
       builder: (context, child) {
         final pulse = Curves.easeInOut.transform(_controller.value);
+        // -1 parks the band off the left edge, 1 off the right; the extra
+        // reach past 1 is the pause between sweeps.
+        final slide = -1 + (_sweep.value * 3);
         return Transform.scale(
           scale: 1 + (pulse * 0.012),
           child: GestureDetector(
@@ -554,22 +553,147 @@ class _AnimatedPremiumButtonState extends State<_AnimatedPremiumButton>
                   ),
                 ],
               ),
-              child: Center(
-                child: widget.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        widget.ctaLabel,
-                        style: GoogleFonts.lato(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
+              child: Stack(
+                children: [
+                  Center(
+                    child: widget.isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Padding(
+                            // A store price can be long ('Rp 15.000'), and
+                            // the label shrinks to fit rather than wrapping
+                            // in a pill this short.
+                            padding: EdgeInsets.symmetric(horizontal: 20.w),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                widget.ctaLabel,
+                                maxLines: 1,
+                                style: GoogleFonts.lato(
+                                  fontSize: 18.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                  if (!widget.isLoading)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28.r),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: const Alignment(-1, -0.4),
+                                end: const Alignment(1, 0.4),
+                                colors: [
+                                  Colors.white.withValues(alpha: 0),
+                                  Colors.white.withValues(alpha: 0.34),
+                                  Colors.white.withValues(alpha: 0),
+                                ],
+                                stops: const [0.38, 0.5, 0.62],
+                                transform: _SlidingGradientTransform(slide),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+                    ),
+                ],
               ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// Shifts a gradient sideways by a fraction of its box, which is all a
+/// shimmer is: the same gradient, drawn a little further along each frame.
+class _SlidingGradientTransform extends GradientTransform {
+  const _SlidingGradientTransform(this.slidePercent);
+
+  final double slidePercent;
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) =>
+      Matrix4.translationValues(bounds.width * slidePercent, 0, 0);
+}
+
+/// The offer pill above the weekly card. The lettering is a warm gradient
+/// that keeps sliding through the text, on a dark capsule so the colours
+/// read against the card's own accent border.
+class _OfferBadge extends StatefulWidget {
+  const _OfferBadge({required this.label});
+
+  final String label;
+
+  @override
+  State<_OfferBadge> createState() => _OfferBadgeState();
+}
+
+class _OfferBadgeState extends State<_OfferBadge>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat();
+
+  // First and last match so the repeated gradient loops without a seam.
+  static const _lettering = [
+    Color(0xFFFFC857),
+    Color(0xFFFFF3D0),
+    Color(0xFFFF8A5B),
+    Color(0xFFFFC857),
+  ];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A1C14),
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: _premiumAccent, width: 1.w),
+            boxShadow: [
+              BoxShadow(
+                color: _lettering.first.withValues(alpha: 0.35),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: ShaderMask(
+            blendMode: BlendMode.srcATop,
+            shaderCallback: (bounds) => LinearGradient(
+              colors: _lettering,
+              tileMode: TileMode.repeated,
+              transform: _SlidingGradientTransform(_controller.value),
+            ).createShader(bounds),
+            child: child,
+          ),
+        );
+      },
+      child: Text(
+        widget.label,
+        style: GoogleFonts.lato(
+          fontSize: 11.sp,
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          letterSpacing: 0.6,
+        ),
+      ),
     );
   }
 }

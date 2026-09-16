@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -28,10 +29,10 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       _buildUpgradeCard(context),
                       SizedBox(height: 24.h),
-                      _buildSection('LEGAL', [
+                      _buildSection('settings_section_legal'.tr(), [
                         _buildMenuItem(
                           icon: Icons.description_outlined,
-                          title: 'Terms of Service',
+                          title: 'settings_terms'.tr(),
                           isFirst: true,
                           onTap: () => _launchUrl(
                             'https://mobinaz.com/terms-antique-identifier',
@@ -40,7 +41,7 @@ class SettingsScreen extends StatelessWidget {
                         _buildDivider(),
                         _buildMenuItem(
                           icon: Icons.privacy_tip_outlined,
-                          title: 'Privacy Policy',
+                          title: 'settings_privacy'.tr(),
                           isLast: true,
                           onTap: () => _launchUrl(
                             'https://mobinaz.com/privacy-antique-identifier',
@@ -48,10 +49,10 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ]),
                       SizedBox(height: 18.h),
-                      _buildSection('ACCOUNT', [
+                      _buildSection('settings_section_account'.tr(), [
                         _buildMenuItem(
                           icon: Icons.support_agent_outlined,
-                          title: 'Support',
+                          title: 'settings_support'.tr(),
                           isFirst: true,
                           onTap: () =>
                               _launchUrl('https://mobinaz.com/support'),
@@ -59,7 +60,7 @@ class SettingsScreen extends StatelessWidget {
                         _buildDivider(),
                         _buildMenuItem(
                           icon: Icons.restore_outlined,
-                          title: 'Restore Purchases',
+                          title: 'settings_restore'.tr(),
                           isLast: true,
                           onTap: () => _showRestoreDialog(context),
                         ),
@@ -96,7 +97,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           SizedBox(width: 16.w),
           Text(
-            'Settings',
+            'settings_title'.tr(),
             style: GoogleFonts.playfairDisplay(
               fontSize: 24.sp,
               fontWeight: FontWeight.bold,
@@ -163,7 +164,9 @@ class SettingsScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      isPremium ? 'PREMIUM ACTIVE' : 'UPGRADE TO PRO',
+                      isPremium
+                          ? 'home_premium_active'.tr()
+                          : 'settings_upgrade_to_pro'.tr(),
                       style: GoogleFonts.lato(
                         fontSize: 10.sp,
                         fontWeight: FontWeight.w800,
@@ -174,8 +177,8 @@ class SettingsScreen extends StatelessWidget {
                     SizedBox(height: 5.h),
                     Text(
                       isPremium
-                          ? 'Unlimited scans, full reports and expert chat'
-                          : 'Unlock unlimited scans and full valuations',
+                          ? 'home_premium_active_subtitle'.tr()
+                          : 'settings_upgrade_subtitle'.tr(),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.lato(
@@ -325,7 +328,7 @@ class SettingsScreen extends StatelessWidget {
         ),
         SizedBox(height: 14.h),
         Text(
-          'Antique Id  ·  Version 1.2.0',
+          'settings_version'.tr(namedArgs: {'version': '1.2.0'}),
           style: GoogleFonts.lato(
             fontSize: 12.sp,
             fontWeight: FontWeight.w600,
@@ -364,7 +367,7 @@ class SettingsScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16.r),
               ),
               title: Text(
-                'Restore Purchases',
+                'settings_restore'.tr(),
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
@@ -372,7 +375,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               content: Text(
-                'This will restore any previous premium purchases made with this Apple ID.',
+                'settings_restore_message'.tr(),
                 style: GoogleFonts.lora(
                   fontSize: 14.sp,
                   color: const Color(0xFF6B5B73),
@@ -385,7 +388,7 @@ class SettingsScreen extends StatelessWidget {
                       ? null
                       : () => Navigator.pop(dialogContext),
                   child: Text(
-                    'Cancel',
+                    'common_cancel'.tr(),
                     style: GoogleFonts.lora(
                       fontSize: 14.sp,
                       color: const Color(0xFF8B8B8B),
@@ -419,7 +422,7 @@ class SettingsScreen extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Purchases restored successfully! Premium features unlocked.',
+                                      'settings_restore_success'.tr(),
                                       style: GoogleFonts.lora(
                                         color: Colors.white,
                                       ),
@@ -432,7 +435,7 @@ class SettingsScreen extends StatelessWidget {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'No previous purchases found for this account.',
+                                      'settings_restore_none'.tr(),
                                       style: GoogleFonts.lora(
                                         color: Colors.white,
                                       ),
@@ -451,7 +454,7 @@ class SettingsScreen extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'Failed to restore purchases. Please try again.',
+                                    'settings_restore_failed'.tr(),
                                     style: GoogleFonts.lora(
                                       color: Colors.white,
                                     ),
@@ -479,7 +482,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                         )
                       : Text(
-                          'Restore',
+                          'common_restore'.tr(),
                           style: GoogleFonts.lora(
                             fontSize: 14.sp,
                             color: Colors.white,

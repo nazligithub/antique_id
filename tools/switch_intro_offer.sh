@@ -17,7 +17,7 @@
 set -e
 
 SUBSCRIPTION_ID="6753019907"      # Weekly Access -- com.mobinaz.antique.weekly
-DURATION="THREE_DAYS"
+DURATION="ONE_WEEK"
 CSV="$(dirname "$0")/paid_trial_offers.csv"
 
 MODE="${1:-}"
@@ -29,11 +29,11 @@ if [[ "$MODE" != "paid" && "$MODE" != "free" ]]; then
 fi
 
 if [[ "$MODE" == "paid" ]]; then
-  OFFER_MODE="PAY_UP_FRONT"
-  echo "→ 3 days, paid up front at the local equivalent of \$0.99 (tier 10010)"
+  OFFER_MODE="PAY_AS_YOU_GO"
+  echo "→ 1 week, pay as you go at the local equivalent of \$0.99 (tier 10010)"
 else
   OFFER_MODE="FREE_TRIAL"
-  echo "→ 3 days, free trial"
+  echo "→ 1 week, free trial"
 fi
 
 echo "→ subscription $SUBSCRIPTION_ID"

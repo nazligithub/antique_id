@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -264,7 +265,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_analysis.category != 'Not available')
+        if (_analysis.hasCategory)
           Text(
             _analysis.category.toUpperCase(),
             style: GoogleFonts.lato(
@@ -286,9 +287,9 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
         ),
         SizedBox(height: 7.h),
         Text(
-          _analysis.period == 'Not available'
-              ? 'Analysis completed'
-              : _analysis.period,
+          _analysis.hasPeriod
+              ? _analysis.period
+              : 'result_analysis_completed'.tr(),
           style: GoogleFonts.lato(
             color: _mutedInk,
             fontSize: 14.sp,
@@ -321,7 +322,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
               Icon(Icons.sell_outlined, color: _accent, size: 19.sp),
               SizedBox(width: 8.w),
               Text(
-                'ESTIMATED MARKET VALUE',
+                'result_estimated_value'.tr(),
                 style: GoogleFonts.lato(
                   color: Colors.white.withValues(alpha: 0.68),
                   fontSize: 11.sp,
@@ -350,12 +351,12 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
                 if (_analysis.priceRange != null)
                   _valueChip(
                     Icons.swap_horiz_rounded,
-                    'Range  ${_analysis.priceRange}',
+                    '${'result_range'.tr()}  ${_analysis.priceRange}',
                   ),
                 if (_analysis.authenticity != null)
                   _valueChip(
                     Icons.verified_outlined,
-                    'Authenticity  ${_analysis.authenticity}',
+                    '${'result_authenticity'.tr()}  ${_analysis.authenticity}',
                   ),
               ],
             ),
@@ -371,7 +372,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
               SizedBox(width: 5.w),
               Expanded(
                 child: Text(
-                  'Use this as a market reference, not a formal appraisal.',
+                  'result_reference_note'.tr(),
                   style: GoogleFonts.lato(
                     color: Colors.white.withValues(alpha: 0.58),
                     fontSize: 12.sp,
@@ -388,17 +389,17 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
 
   Widget _buildDetailsCard() {
     final details = [
-      (Icons.public_outlined, 'Origin', _analysis.origin),
-      (Icons.layers_outlined, 'Material', _analysis.material),
-      (Icons.fact_check_outlined, 'Condition', _analysis.condition),
-      (Icons.diamond_outlined, 'Rarity', _analysis.rarity),
+      (Icons.public_outlined, 'result_origin'.tr(), _analysis.origin),
+      (Icons.layers_outlined, 'result_material'.tr(), _analysis.material),
+      (Icons.fact_check_outlined, 'result_condition'.tr(), _analysis.condition),
+      (Icons.diamond_outlined, 'result_rarity'.tr(), _analysis.rarity),
     ];
 
     return _buildCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle(Icons.menu_book_outlined, 'Object details'),
+          _sectionTitle(Icons.menu_book_outlined, 'result_object_details'.tr()),
           SizedBox(height: 16.h),
           GridView.builder(
             shrinkWrap: true,
@@ -466,7 +467,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Identification confidence',
+                  'result_identification_confidence'.tr(),
                   style: GoogleFonts.lato(
                     color: _mutedInk,
                     fontSize: 12.sp,
@@ -504,7 +505,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle(Icons.history_edu_outlined, 'About this piece'),
+          _sectionTitle(Icons.history_edu_outlined, 'result_about'.tr()),
           SizedBox(height: 12.h),
           Text(
             _analysis.description,
@@ -550,7 +551,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle(Icons.spa_outlined, 'Caring for it'),
+          _sectionTitle(Icons.spa_outlined, 'result_care'.tr()),
           SizedBox(height: 12.h),
           Text(
             _analysis.careTip!,
@@ -613,10 +614,10 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
             children: [
               _sectionTitle(
                 Icons.compare_arrows_outlined,
-                'Similar market items',
+                'result_similar_items'.tr(),
               ),
               Text(
-                'Active listings',
+                'result_active_listings'.tr(),
                 style: GoogleFonts.lato(color: _mutedInk, fontSize: 10.sp),
               ),
             ],
@@ -705,7 +706,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
         SizedBox(width: 8.w),
         Expanded(
           child: Text(
-            'AI identification is an estimate. For insurance, sale or authentication, consult a qualified appraiser.',
+            'result_disclaimer'.tr(),
             style: GoogleFonts.lato(
               color: _mutedInk.withValues(alpha: 0.78),
               fontSize: 11.sp,
@@ -769,7 +770,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
               child: OutlinedButton.icon(
                 onPressed: _askExpert,
                 icon: Icon(Icons.chat_bubble_outline_rounded, size: 18.sp),
-                label: const Text('Ask expert'),
+                label: Text('result_ask_expert'.tr()),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _ink,
                   side: BorderSide(color: _ink.withValues(alpha: 0.3)),
@@ -799,7 +800,9 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
                         ),
                       )
                     : Icon(Icons.bookmark_add_outlined, size: 19.sp),
-                label: Text(_isSaving ? 'Saving...' : 'Save to collection'),
+                label: Text(
+                  _isSaving ? 'result_saving'.tr() : 'result_save'.tr(),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _accent,
                   foregroundColor: Colors.white,
@@ -831,7 +834,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => AntiqueChatScreen(
-          initialMessage: 'Tell me more about ${_analysis.name}.',
+          initialMessage: 'result_ask_more'.tr(namedArgs: {'name': _analysis.name}),
         ),
       ),
     );
@@ -860,7 +863,9 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
             Navigator.pop(sheetContext);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Added to "$collectionName" collection!'),
+                content: Text(
+                  'result_added_to_collection'.tr(namedArgs: {'name': collectionName}),
+                ),
                 backgroundColor: _success,
               ),
             );
@@ -868,7 +873,9 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Could not save this antique: $error'),
+                content: Text(
+                  'result_save_failed'.tr(namedArgs: {'error': '$error'}),
+                ),
                 backgroundColor: AppColors.error,
               ),
             );
@@ -893,9 +900,9 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
 
     final message = StringBuffer()
       ..writeln(_analysis.name)
-      ..writeln('Estimated value: $valuation')
+      ..writeln('share_estimated_value'.tr(namedArgs: {'value': valuation}))
       ..writeln()
-      ..write('Identified with Antique Identifier — $_appStoreUrl');
+      ..write('share_footer'.tr(namedArgs: {'url': _appStoreUrl}));
 
     // iPad anchors the share sheet to whatever opened it and throws rather
     // than guessing, so hand it this screen's rect.
@@ -918,7 +925,7 @@ class _AntiqueSolutionScreenState extends State<AntiqueSolutionScreen> {
       debugPrint('Error sharing result: $error');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the share sheet.')),
+        SnackBar(content: Text('share_failed'.tr())),
       );
     }
   }

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:appactor_flutter/appactor_flutter.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../models/antique_model.dart';
 
 class CollectionService {
@@ -37,7 +38,7 @@ class CollectionService {
       return '\$${data['value']}';
     }
 
-    return 'Value not determined';
+    return 'analysis_value_undetermined'.tr();
   }
 
   /// A stable identity for the on-device collection.
@@ -136,12 +137,12 @@ class CollectionService {
 
       final antique = AntiqueModel(
         id: antiqueId,
-        name: data['antique_name'] ?? data['name'] ?? 'Unknown Antique',
-        description: data['description'] ?? 'No description available',
+        name: data['antique_name'] ?? data['name'] ?? 'analysis_unknown_antique'.tr(),
+        description: data['description'] ?? 'analysis_no_description'.tr(),
         imageUrl: data['image_url'] ?? data['imageUrl'] ?? '',
         price: _extractPrice(data),
-        era: data['era'] ?? data['period'] ?? data['estimatedAge'] ?? 'Unknown era',
-        origin: data['origin'] ?? 'Unknown origin',
+        era: data['era'] ?? data['period'] ?? data['estimatedAge'] ?? 'analysis_unknown_era'.tr(),
+        origin: data['origin'] ?? 'analysis_unknown_origin'.tr(),
         isPremium: false,
       );
 

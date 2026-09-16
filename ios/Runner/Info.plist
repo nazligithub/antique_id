@@ -6,6 +6,17 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>de</string>
+		<string>fr</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>pt</string>
+		<string>pt-BR</string>
+		<string>tr</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Antique Id</string>
 	<key>CFBundleExecutable</key>

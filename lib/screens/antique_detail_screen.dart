@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -38,7 +39,7 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
       compressQuality: 90,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Crop Antique Image',
+          toolbarTitle: 'crop_toolbar_title'.tr(),
           toolbarColor: const Color(0xFF8B4513),
           toolbarWidgetColor: Colors.white,
           activeControlsWidgetColor: const Color(0xFF8B4513),
@@ -49,9 +50,9 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
           lockAspectRatio: false,
         ),
         IOSUiSettings(
-          title: 'Crop Antique Image',
-          doneButtonTitle: 'Done',
-          cancelButtonTitle: 'Cancel',
+          title: 'crop_toolbar_title'.tr(),
+          doneButtonTitle: 'common_done'.tr(),
+          cancelButtonTitle: 'common_cancel'.tr(),
           aspectRatioLockEnabled: false,
           resetAspectRatioEnabled: true,
         ),
@@ -141,7 +142,7 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
                   ),
                   SizedBox(width: 16.w),
                   Text(
-                    'Crop Your Antique',
+                    'crop_title'.tr(),
                     style: GoogleFonts.playfairDisplay(
                       fontSize: 24.sp,
                       fontWeight: FontWeight.bold,
@@ -183,7 +184,7 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
                           child: Column(
                             children: [
                               Text(
-                                'Perfect! Your antique is ready for analysis.',
+                                'crop_ready'.tr(),
                                 style: GoogleFonts.lora(
                                   fontSize: 16.sp,
                                   color: const Color(0xFF2D1810),
@@ -209,7 +210,7 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        'Re-crop',
+                                        'crop_recrop'.tr(),
                                         style: GoogleFonts.lora(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.w500,
@@ -233,7 +234,7 @@ class _AntiqueDetailScreenState extends State<AntiqueDetailScreen> {
                                         ),
                                       ),
                                       child: Text(
-                                        'Analyze Antique',
+                                        'crop_analyze'.tr(),
                                         style: GoogleFonts.lora(
                                           fontSize: 16.sp,
                                           fontWeight: FontWeight.w600,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
@@ -15,45 +16,40 @@ class AntiqueOnboardViewModel extends ChangeNotifier {
   OnboardPage pageAt(int index) => _pages[index.clamp(0, _pages.length - 1)];
 
   String get buttonTitle {
-    return _currentPage < totalPages - 1 ? 'Continue' : 'Start Collecting';
+    return _currentPage < totalPages - 1
+        ? 'common_continue'.tr()
+        : 'onboard_start'.tr();
   }
 
-  String getTitleForPage(int index) => pageAt(index).title;
+  String getTitleForPage(int index) => pageAt(index).title.tr();
 
-  String getSubtitleForPage(int index) => pageAt(index).subtitle;
+  String getSubtitleForPage(int index) => pageAt(index).subtitle.tr();
 
   /// Four steps that walk through what actually happens to a photo, in the
   /// order it happens. The two middle ones are drawn rather than filmed --
   /// they show the report and the market comparison, which is the part a
   /// reader cannot guess at from a video of someone holding up a camera.
+  /// Titles and subtitles are translation keys, resolved when read.
   static const List<OnboardPage> _pages = [
     OnboardPage(
       media: OnboardMedia.scanVideo,
-      title: 'Discover Hidden Value',
-      subtitle:
-          'Photograph any antique and get an expert read on what it is, where '
-          'it came from, and what it is worth',
+      title: 'onboard_title_1',
+      subtitle: 'onboard_subtitle_1',
     ),
     OnboardPage(
       media: OnboardMedia.identification,
-      title: 'Know What You Are Holding',
-      subtitle:
-          'Period, origin, materials, condition and authenticity, all assessed '
-          'from a single photo',
+      title: 'onboard_title_2',
+      subtitle: 'onboard_subtitle_2',
     ),
     OnboardPage(
       media: OnboardMedia.marketPrices,
-      title: 'See What Similar Pieces Sell For',
-      subtitle:
-          'We search live marketplace listings, so you can weigh the estimate '
-          'against what the market is actually asking',
+      title: 'onboard_title_3',
+      subtitle: 'onboard_subtitle_3',
     ),
     OnboardPage(
       media: OnboardMedia.collectionVideo,
-      title: 'Build Your Collection',
-      subtitle:
-          'Keep every find in one place, with its valuation, history and care '
-          'notes',
+      title: 'onboard_title_4',
+      subtitle: 'onboard_subtitle_4',
     ),
   ];
 

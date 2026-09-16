@@ -47,7 +47,13 @@ enum IntroOfferBridge {
           let products = try await Product.products(for: productIds)
           var payload: [String: Any] = [:]
           for product in products {
-            guard let offer = product.subscription?.introductoryOffer else { continue }
+            guard let subscription = product.subscription,
+                  let offer = subscription.introductoryOffer else { continue }
+            // The offer hangs off the product for everyone; whether this
+            // Apple ID can still take it is a separate question, and one it
+            // has already used shows up at checkout as the full price. Only
+            // report what the sheet will actually charge.
+            guard await subscription.isEligibleForIntroOffer else { continue }
             payload[product.id] = describe(offer)
           }
           result(payload)

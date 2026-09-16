@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../constants/app_constants.dart';
@@ -156,7 +157,7 @@ class _HomeViewState extends State<HomeView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'PREMIUM ACTIVE',
+                          'home_premium_active'.tr(),
                           style: AppTextStyles.caption.copyWith(
                             color: AppColors.premiumGold,
                             fontWeight: FontWeight.w700,
@@ -166,7 +167,7 @@ class _HomeViewState extends State<HomeView> {
                         ),
                         SizedBox(height: 5.h),
                         Text(
-                          'Unlimited scans, full reports and expert chat',
+                          'home_premium_active_subtitle'.tr(),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.body2.copyWith(
@@ -523,7 +524,7 @@ class _HomeViewState extends State<HomeView> {
             child: Padding(
               padding: EdgeInsets.all(AppSizes.paddingXL),
               child: Text(
-                'No featured antiques available',
+                'home_featured_empty'.tr(),
                 style: AppTextStyles.body1.copyWith(
                   color: AppColors.textSecondary,
                 ),

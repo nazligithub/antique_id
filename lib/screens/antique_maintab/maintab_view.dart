@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
@@ -51,10 +52,10 @@ class _MainTabViewState extends State<MainTabView> {
 
         if (index == 0) {
           iconData = Icons.home_outlined;
-          label = 'Home';
+          label = 'tab_home'.tr();
         } else {
           iconData = Icons.bookmark_outline;
-          label = 'Collection';
+          label = 'tab_collection'.tr();
         }
 
         return Column(

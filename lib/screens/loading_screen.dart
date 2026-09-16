@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -28,21 +29,22 @@ class _LoadingScreenState extends State<LoadingScreen>
   int currentTipIndex = 0;
   double progress = 0.0;
   double _targetProgress = 0.12;
-  String _stepLabel = 'Processing image';
+  String _stepLabel = 'loading_step_uploading'.tr();
   bool isAnalyzing = true;
 
   // How full the bar should be once each server-reported step is reached.
   static const Map<int, double> _stepTargets = {1: 0.18, 2: 0.65, 3: 0.92};
 
+  // The server names each step with a fixed key; its step_label is English
+  // only, so the wording comes from here.
+  static const Map<String, String> _stepLabels = {
+    'uploading': 'loading_step_uploading',
+    'analyzing': 'loading_step_analyzing',
+    'composing': 'loading_step_composing',
+  };
+
   final List<String> tips = [
-    "Did you know? The oldest known antique is over 4,000 years old!",
-    "Tip: Look for maker's marks or signatures on your antiques.",
-    "Fun fact: Some antiques increase in value by 10-15% annually.",
-    "Remember: Age doesn't always determine an antique's value.",
-    "Interesting: Antiques are items that are at least 100 years old.",
-    "Tip: Original condition often matters more than restoration.",
-    "Did you know? Provenance can significantly increase an item's value.",
-    "Fun fact: Some modern items are already considered collectibles!",
+    for (var i = 1; i <= 8; i++) 'loading_tip_$i'.tr(),
   ];
 
   @override
@@ -85,10 +87,10 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   void _applyStatus(Map<String, dynamic> status) {
     final step = status['step'];
-    final label = status['step_label'];
+    final labelKey = _stepLabels[status['step_key']];
     if (!mounted) return;
     setState(() {
-      if (label is String && label.isNotEmpty) _stepLabel = label;
+      if (labelKey != null) _stepLabel = labelKey.tr();
       if (step is int) _targetProgress = _stepTargets[step] ?? _targetProgress;
     });
   }
@@ -138,7 +140,7 @@ class _LoadingScreenState extends State<LoadingScreen>
       debugPrint('Analysis failed: $e');
       if (!mounted) return;
       // Raw exception text used to reach the reader here, stack noise and all.
-      _failWith('Analysis failed. Please try again.');
+      _failWith('loading_failed'.tr());
     }
   }
 
@@ -196,15 +198,14 @@ class _LoadingScreenState extends State<LoadingScreen>
         return {'success': true, 'data': status['result']};
       }
       if (status['status'] == 'failed') {
-        throw ApiException(
-          status['error'] as String? ?? 'Analysis failed',
-          null,
-        );
+        final reason = status['error']?.toString();
+        debugPrint('Scan $scanId failed: $reason');
+        throw ApiException(ApiService.scanFailureMessage(reason), null);
       }
     }
 
     throw ApiException(
-      'This is taking longer than usual. Your scan is still saved — check your history in a moment.',
+      'loading_timeout'.tr(),
       null,
     );
   }
@@ -241,7 +242,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   children: [
                     SizedBox(height: 40.h),
                     Text(
-                      'Analyzing Your Antique',
+                      'loading_title'.tr(),
                       style: GoogleFonts.playfairDisplay(
                         fontSize: 28.sp,
                         fontWeight: FontWeight.bold,
@@ -350,7 +351,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                     ),
                     const Spacer(),
                     Text(
-                      'A detailed appraisal can take up to a minute.',
+                      'loading_hint'.tr(),
                       style: GoogleFonts.lora(
                         fontSize: 14.sp,
                         color: const Color(0xFF2D1810).withValues(alpha: 0.6),

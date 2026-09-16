@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -214,10 +215,10 @@ class _AntiqueOnboardViewState extends State<AntiqueOnboardView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _badge('IDENTIFIED', Icons.verified_outlined),
+              _badge('onboard_mock_identified'.tr(), Icons.verified_outlined),
               SizedBox(height: 10.h),
               Text(
-                'Blue and White Porcelain Vase',
+                'onboard_mock_name'.tr(),
                 style: GoogleFonts.playfairDisplay(
                   fontSize: 19.sp,
                   fontWeight: FontWeight.w700,
@@ -228,15 +229,15 @@ class _AntiqueOnboardViewState extends State<AntiqueOnboardView> {
               SizedBox(height: 14.h),
               Row(
                 children: [
-                  Expanded(child: _fact('Period', 'Ming, 16th c.')),
-                  Expanded(child: _fact('Origin', 'Jingdezhen')),
+                  Expanded(child: _fact('explore_period'.tr(), 'onboard_mock_period'.tr())),
+                  Expanded(child: _fact('explore_origin'.tr(), 'onboard_mock_origin'.tr())),
                 ],
               ),
               SizedBox(height: 11.h),
               Row(
                 children: [
-                  Expanded(child: _fact('Material', 'Porcelain')),
-                  Expanded(child: _fact('Condition', 'Excellent')),
+                  Expanded(child: _fact('explore_material'.tr(), 'onboard_mock_material'.tr())),
+                  Expanded(child: _fact('explore_condition'.tr(), 'onboard_mock_condition'.tr())),
                 ],
               ),
               SizedBox(height: 14.h),
@@ -244,9 +245,9 @@ class _AntiqueOnboardViewState extends State<AntiqueOnboardView> {
               SizedBox(height: 12.h),
               Row(
                 children: [
-                  _pill('Authenticity  High'),
+                  _pill('${'result_authenticity'.tr()}  ${'onboard_mock_authenticity'.tr()}'),
                   SizedBox(width: 8.w),
-                  _pill('Rarity  8/10'),
+                  _pill('${'result_rarity'.tr()}  8/10'),
                 ],
               ),
             ],
@@ -282,7 +283,7 @@ class _AntiqueOnboardViewState extends State<AntiqueOnboardView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'ESTIMATED VALUE',
+                          'onboard_mock_estimated_value'.tr(),
                           style: GoogleFonts.lato(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w700,
@@ -305,7 +306,7 @@ class _AntiqueOnboardViewState extends State<AntiqueOnboardView> {
                   ),
                   Flexible(
                     child: Text(
-                      'Weighed against\n26 live listings',
+                      'onboard_mock_listings'.tr(),
                       textAlign: TextAlign.right,
                       style: GoogleFonts.lato(
                         fontSize: 11.sp,

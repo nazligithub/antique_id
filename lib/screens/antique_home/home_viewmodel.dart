@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 import '../../models/antique_model.dart';
 import '../../providers/app_provider.dart';
@@ -13,12 +14,12 @@ class HomeViewModel extends ChangeNotifier {
   bool _isLoadingAntiques = false;
   String? _antiqueError;
 
-  final List<String> _popularQuestions = [
-    'How to identify antique furniture?',
-    'What makes an item valuable?',
-    'How to spot fake antiques?',
-    'Best way to preserve antiques?',
-    'How to date antique items?',
+  static const _popularQuestionKeys = [
+    'home_question_1',
+    'home_question_2',
+    'home_question_3',
+    'home_question_4',
+    'home_question_5',
   ];
 
   List<AntiqueModel> get featuredAntiques => _featuredAntiques;
@@ -26,7 +27,8 @@ class HomeViewModel extends ChangeNotifier {
   String? get antiqueError => _antiqueError;
   bool get hasAntiqueError => _antiqueError != null;
   bool get isAntiquesEmpty => _featuredAntiques.isEmpty && !_isLoadingAntiques && !hasAntiqueError;
-  List<String> get popularQuestions => _popularQuestions;
+  List<String> get popularQuestions =>
+      _popularQuestionKeys.map((key) => key.tr()).toList();
 
   Future<void> loadFeaturedAntiques() async {
     if (_isLoadingAntiques) return;
@@ -39,43 +41,43 @@ class HomeViewModel extends ChangeNotifier {
       _featuredAntiques = [
         AntiqueModel(
           id: '1',
-          name: 'Ming Dynasty Vase',
-          description: '18th century Chinese porcelain',
+          name: 'featured_1_name'.tr(),
+          description: 'featured_1_summary'.tr(),
           imageUrl: 'assets/antique_featured/ming_dynasty.png',
           price: '\$10 million',
-          era: '1700s',
-          origin: 'China',
+          era: 'featured_1_era'.tr(),
+          origin: 'featured_1_origin_short'.tr(),
         ),
         AntiqueModel(
           id: '2',
-          name: 'Victorian Emerald Ring',
-          description: 'Rare Victorian era emerald and gold ring',
+          name: 'featured_2_name'.tr(),
+          description: 'featured_2_summary'.tr(),
           imageUrl: 'assets/antique_featured/victorian_emerald.png',
           price: '\$250,000',
-          era: '1850s',
-          origin: 'England',
+          era: 'featured_2_era'.tr(),
+          origin: 'featured_2_origin_short'.tr(),
         ),
         AntiqueModel(
           id: '3',
-          name: 'Napoleon\'s Sword',
-          description: 'Gold-encrusted ceremonial sword',
+          name: 'featured_3_name'.tr(),
+          description: 'featured_3_summary'.tr(),
           imageUrl: 'assets/antique_featured/napoleon_sword.png',
           price: '\$5.2 million',
-          era: '1800s',
-          origin: 'France',
+          era: 'featured_3_era'.tr(),
+          origin: 'featured_3_origin_short'.tr(),
         ),
         AntiqueModel(
           id: '4',
-          name: 'Roman Mosaic Tile',
-          description: 'Ancient Roman decorative mosaic artwork',
+          name: 'featured_4_name'.tr(),
+          description: 'featured_4_summary'.tr(),
           imageUrl: 'assets/antique_featured/roman_mosaic.png',
           price: '\$500,000',
-          era: '100 AD',
-          origin: 'Italy',
+          era: 'featured_4_era'.tr(),
+          origin: 'featured_4_origin_short'.tr(),
         ),
       ];
     } catch (e) {
-      _antiqueError = 'Error loading featured antiques';
+      _antiqueError = 'home_featured_error'.tr();
       debugPrint('Error loading antiques: $e');
     } finally {
       _isLoadingAntiques = false;
@@ -135,8 +137,8 @@ class HomeViewModel extends ChangeNotifier {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Premium Active!',
+                Text(
+                  'premium_active_title'.tr(),
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -144,8 +146,8 @@ class HomeViewModel extends ChangeNotifier {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'You have unlimited access to:',
+                Text(
+                  'premium_active_subtitle'.tr(),
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white,
@@ -153,11 +155,11 @@ class HomeViewModel extends ChangeNotifier {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _buildFeatureItem('🏺', 'Unlimited Antique Scanning'),
+                _buildFeatureItem('🏺', 'paywall_feature_scanning'.tr()),
                 const SizedBox(height: 8),
-                _buildFeatureItem('🔍', 'Advanced AI Recognition'),
+                _buildFeatureItem('🔍', 'paywall_feature_recognition'.tr()),
                 const SizedBox(height: 8),
-                _buildFeatureItem('🏛️', 'Premium Collections'),
+                _buildFeatureItem('🏛️', 'paywall_feature_collections'.tr()),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
@@ -172,8 +174,8 @@ class HomeViewModel extends ChangeNotifier {
                       vertical: 12,
                     ),
                   ),
-                  child: const Text(
-                    'Great!',
+                  child: Text(
+                    'premium_active_cta'.tr(),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

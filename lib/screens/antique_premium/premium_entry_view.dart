@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -92,11 +93,10 @@ class _ThreeDayActivationViewState extends State<ThreeDayActivationView>
   Timer? _completionTimer;
   bool _didComplete = false;
 
-  /// Starts on the free-trial wording because that is what this screen was
-  /// built to announce, and is corrected the moment StoreKit answers. The
-  /// screen animates for well over a second before either line is legible, so
-  /// the swap lands long before anyone can read the wrong one.
-  String _offerLine = '3-day free trial unlocked';
+  /// Starts on a neutral introductory offer wording and is updated the moment
+  /// StoreKit answers. The screen animates for well over a second before either
+  /// line is legible, so the swap lands long before anyone can read the wrong one.
+  String _offerLine = 'entry_offer_unlocked'.tr();
 
   Future<void> _loadOfferLine() async {
     final productId = AppactorHelper.shared.weeklyPackage?.productId;
@@ -104,10 +104,24 @@ class _ThreeDayActivationViewState extends State<ThreeDayActivationView>
     final offer = await IntroOfferHelper.forProduct(productId);
     if (offer == null || !mounted) return;
     final days = offer.totalDays;
+    final isWeeks = days >= 7 && days % 7 == 0;
+    final span = days <= 0
+        ? ''
+        : isWeeks
+            ? (days ~/ 7 == 1
+                ? 'entry_span_first_week'.tr()
+                : 'paywall_span_weeks'.tr(namedArgs: {'count': '${days ~/ 7}'}))
+            : 'paywall_span_days'.tr(namedArgs: {'count': '$days'});
     setState(() {
-      _offerLine = offer.isFree
-          ? '$days-day free trial unlocked'
-          : '$days days for ${offer.displayPrice}';
+      if (offer.isFree) {
+        _offerLine = span.isNotEmpty
+            ? 'entry_free_trial_unlocked'.tr(namedArgs: {'span': span})
+            : 'entry_free_trial_unlocked_generic'.tr();
+      } else {
+        _offerLine = span.isNotEmpty
+            ? 'entry_paid_offer'.tr(namedArgs: {'span': span, 'price': offer.displayPrice})
+            : offer.displayPrice;
+      }
     });
   }
 
@@ -181,7 +195,7 @@ class _ThreeDayActivationViewState extends State<ThreeDayActivationView>
                         Opacity(
                           opacity: 0.72 + (progress * 0.28),
                           child: Text(
-                            'Your trial is ready',
+                            'entry_offer_ready'.tr(),
                             textAlign: TextAlign.center,
                             style: GoogleFonts.playfairDisplay(
                               fontSize: 24.sp,

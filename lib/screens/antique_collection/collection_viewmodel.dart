@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/antique_model.dart';
 import '../../services/collection_service.dart';
@@ -202,7 +203,7 @@ class CollectionViewModel extends ChangeNotifier {
     try {
       _collections = await CollectionService().getCollectionsByName();
     } catch (e) {
-      _error = 'Error loading collections';
+      _error = 'collection_load_error'.tr();
       debugPrint('Error loading collections: $e');
     } finally {
       _isLoading = false;
@@ -216,7 +217,7 @@ class CollectionViewModel extends ChangeNotifier {
       // Koleksiyonları yeniden yükle
       await loadCollection();
     } catch (e) {
-      _error = 'Error removing from collection';
+      _error = 'collection_remove_error'.tr();
       debugPrint('Error removing from collection: $e');
       notifyListeners();
     }
@@ -298,7 +299,7 @@ class CollectionViewModel extends ChangeNotifier {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'New Collection',
+                  'collection_new'.tr(),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -309,7 +310,7 @@ class CollectionViewModel extends ChangeNotifier {
                 TextField(
                   controller: controller,
                   decoration: InputDecoration(
-                    hintText: 'Collection Name...',
+                    hintText: 'collection_name_hint'.tr(),
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
                     border: UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.grey[300]!),
@@ -331,7 +332,7 @@ class CollectionViewModel extends ChangeNotifier {
                           Navigator.pop(context);
                         },
                         child: Text(
-                          'Cancel',
+                          'common_cancel'.tr(),
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
@@ -355,7 +356,7 @@ class CollectionViewModel extends ChangeNotifier {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Collection "${controller.text.trim()}" created!',
+                                      'collection_created'.tr(namedArgs: {'name': controller.text.trim()}),
                                     ),
                                     backgroundColor: Color(0xFF8B4513),
                                     duration: Duration(seconds: 2),
@@ -367,7 +368,7 @@ class CollectionViewModel extends ChangeNotifier {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
-                                      'Failed to create collection: ${e.toString()}',
+                                      'collection_create_failed'.tr(namedArgs: {'error': e.toString()}),
                                     ),
                                     backgroundColor: Colors.red,
                                     duration: Duration(seconds: 3),
@@ -385,7 +386,7 @@ class CollectionViewModel extends ChangeNotifier {
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
                         child: Text(
-                          'Create',
+                          'common_create'.tr(),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -409,7 +410,7 @@ class CollectionViewModel extends ChangeNotifier {
       await CollectionService().renameCollection(oldName, newName);
       await loadCollection(forceRefresh: true);
     } catch (e) {
-      _error = 'Error renaming collection';
+      _error = 'collection_rename_error'.tr();
       debugPrint('Error renaming collection: $e');
       notifyListeners();
       rethrow;

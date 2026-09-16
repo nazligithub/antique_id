@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -79,33 +80,28 @@ class AppRoutes {
 }
 
 class AppStrings {
+  // Every string here is read through easy_localization, so they are getters
+  // rather than constants: the value depends on the locale at call time.
   static const String appName = 'Antique Identifier';
 
   // Premium Card
-  static const String upgradePremium = 'Upgrade Premium';
-  static const String unlockFeatures = 'Unlock to get premium features!';
-  static const String upgradeNow = 'Upgrade now';
+  static String get upgradePremium => 'home_upgrade_premium'.tr();
+  static String get unlockFeatures => 'home_unlock_features'.tr();
+  static String get upgradeNow => 'home_upgrade_now'.tr();
 
   // Home Screen
-  static const String scanAntiqueIdentifier = 'Scan Antique Identifier';
-  static const String identifyAntiques = 'Identify antiques and collectibles';
-  static const String chatWithAI = 'Chat with AI Expert';
-  static const String viewAll = 'View All';
-  static const String featuredAntiques = 'Featured Antiques';
+  static String get scanAntiqueIdentifier => 'home_scan_title'.tr();
+  static String get identifyAntiques => 'home_scan_subtitle'.tr();
+  static String get chatWithAI => 'home_chat_with_ai'.tr();
+  static String get viewAll => 'home_view_all'.tr();
+  static String get featuredAntiques => 'home_featured_antiques'.tr();
 
   // Tab Bar
-  static const String home = 'Home';
-  static const String discover = 'Discover';
-  static const String scan = 'Scan';
-  static const String collection = 'Collection';
-  static const String settings = 'Settings';
-
-  // Popular Questions
-  static const String q1 = 'How to identify antique furniture?';
-  static const String q2 = 'What makes an item valuable?';
-  static const String q3 = 'How to spot fake antiques?';
-  static const String q4 = 'Best way to preserve antiques?';
-  static const String q5 = 'How to date antique items?';
+  static String get home => 'tab_home'.tr();
+  static String get discover => 'tab_discover'.tr();
+  static String get scan => 'tab_scan'.tr();
+  static String get collection => 'tab_collection'.tr();
+  static String get settings => 'tab_settings'.tr();
 }
 
 class AppSizes {
