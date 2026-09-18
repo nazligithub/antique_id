@@ -32,12 +32,17 @@ class AppactorHelper {
     }
   }
 
+  /// The activation flag as last read this session, so the paywall entry can
+  /// decide on its first frame instead of showing a loader while it asks.
+  bool? lastThreeDayActivation;
+
   /// Reads the activation interstitial flag from AppActor Remote Config.
   Future<bool> isThreeDayActivationEnabled() async {
     const key = '3daysactivated';
     final value = await getRemoteConfigValue(key);
     final enabled = _toBool(value);
     debugPrint('AppActor remote config: $key=$value (enabled=$enabled)');
+    lastThreeDayActivation = enabled;
     return enabled;
   }
 

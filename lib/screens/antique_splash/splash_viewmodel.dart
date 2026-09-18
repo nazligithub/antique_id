@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -27,6 +28,9 @@ class SplashViewModel extends ChangeNotifier {
     try {
       await AppactorHelper.shared.loadOfferings();
       await AppactorHelper.shared.checkSubscription();
+      // Warms the paywall entry's flag during the splash pause, so the first
+      // paywall of the session opens settled instead of behind a loader.
+      unawaited(AppactorHelper.shared.isThreeDayActivationEnabled());
       debugPrint('Appactor initialized in splash');
     } catch (e) {
       debugPrint('Error initializing Appactor in splash: $e');

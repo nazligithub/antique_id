@@ -21,7 +21,11 @@ class PremiumEntryView extends StatefulWidget {
 }
 
 class _PremiumEntryViewState extends State<PremiumEntryView> {
-  bool? _showActivation;
+  /// Settled on the first frame whenever the flag has been read this session.
+  /// Sliding in a cream loader and then fading to the black paywall read as a
+  /// screen of its own, which is exactly what a switched-off flag should not
+  /// produce.
+  bool? _showActivation = AppactorHelper.shared.lastThreeDayActivation;
   bool _isOpeningPaywall = false;
 
   @override
@@ -33,12 +37,10 @@ class _PremiumEntryViewState extends State<PremiumEntryView> {
   Future<void> _loadEntryConfig() async {
     final showActivation = await AppactorHelper.shared
         .isThreeDayActivationEnabled();
-    if (!mounted) return;
+    // A screen already on show keeps its decision; the fresh value serves the
+    // next open rather than swapping this one out from under the reader.
+    if (!mounted || _showActivation != null) return;
     setState(() => _showActivation = showActivation);
-
-    if (!showActivation) {
-      _openPaywall();
-    }
   }
 
   void _openPaywall() {
@@ -64,10 +66,16 @@ class _PremiumEntryViewState extends State<PremiumEntryView> {
     if (_showActivation == true) {
       return ThreeDayActivationView(onComplete: _openPaywall);
     }
+    if (_showActivation == false) {
+      // Rendered in place: the route the reader opened simply is the paywall.
+      return AntiquePremiumView(fromOnboarding: widget.fromOnboarding);
+    }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6EFE5),
-      body: const Center(
+    // Only ever seen on the first open of a session, and on the paywall's own
+    // ground so it reads as the paywall loading rather than another screen.
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
         child: CircularProgressIndicator(color: Color(0xFFC28B52)),
       ),
     );

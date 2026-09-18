@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
@@ -327,12 +328,19 @@ class SettingsScreen extends StatelessWidget {
           color: AppColors.primary.withValues(alpha: 0.22),
         ),
         SizedBox(height: 14.h),
-        Text(
-          'settings_version'.tr(namedArgs: {'version': '1.2.0'}),
-          style: GoogleFonts.lato(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary.withValues(alpha: 0.75),
+        // Read from the bundle: a typed-in number had already fallen a
+        // release behind the one on the store.
+        FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (context, snapshot) => Text(
+            'settings_version'.tr(
+              namedArgs: {'version': snapshot.data?.version ?? ''},
+            ),
+            style: GoogleFonts.lato(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textSecondary.withValues(alpha: 0.75),
+            ),
           ),
         ),
         SizedBox(height: 5.h),
